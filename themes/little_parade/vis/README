@@ -1,0 +1,6 @@
+Each config file in this directory corresponds to a screen index (1, 2, 3, etc.) 
+This allows vis's config to be altered depending on the aspect ratio of each screen.
+In this example, config1 and config2 are 16:9 screens while config3 is a 5:4 screen.
+Also, since vis likes to lag when multiple instances use the same fifo,
+each screen is given a separate fifo, configure mpd accordingly.
+Vis is automatically redirected to this directory for colors, logs, etc.

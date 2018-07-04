@@ -1,0 +1,11 @@
+mpd.fifo.path=/tmp/mpd1.fifo
+audio.sources=mpd
+visualizer.spectrum.character=●
+#audio.stereo.enabled=false
+visualizer.spectrum.bottom.margin=0.55
+visualizer.spectrum.right.margin=0.22
+visualizer.spectrum.left.margin=0.005
+visualizer.spectrum.bar.width=1
+visualizer.spectrum.bar.spacing=3
+visualizer.spectrum.smoothing.mode=monstercat
+colors.scheme=little_parade
