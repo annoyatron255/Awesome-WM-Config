@@ -127,6 +127,7 @@ function theme.mpd_prev()
 end
 
 function theme.mpd_repeat_cycle()
+	local repeat_mode
 	if mpd_now.repeat_mode and mpd_now.single_mode then
 		awful.spawn("mpc repeat off")
 		awful.spawn("mpc single off")
@@ -138,7 +139,7 @@ function theme.mpd_repeat_cycle()
 		awful.spawn("mpc repeat on")
 		repeat_mode = "ALL"
 	end
-	notification_text = "Repeat: " .. repeat_mode
+	local notification_text = "Repeat: " .. repeat_mode
 	if not theme.mpd.notification_repeat then
 		theme.mpd.notification_repeat = naughty.notify({
 			text = notification_text,
@@ -151,13 +152,14 @@ function theme.mpd_repeat_cycle()
 end
 
 function theme.mpd_random_toggle()
+	local random_mode
 	if mpd_now.random_mode then
 		random_mode = "OFF"
 	else
 		random_mode = "ON"
 	end
 	awful.spawn("mpc random")
-	notification_text = "Random: " .. random_mode
+	local notification_text = "Random: " .. random_mode
 	if not theme.mpd.notification_random then
 		theme.mpd.notification_random = naughty.notify({
 			text = notification_text,
@@ -174,6 +176,8 @@ end
 theme.mpd = lain.widget.mpd({
 	followtag = true,
 	settings = function()
+		local state
+		local notification_text
 		if mpd_now.state == "play" then
 			state = "   " .. utf8.char(0xf04b) .. " "
 		elseif mpd_now.state == "pause" then
@@ -189,7 +193,7 @@ theme.mpd = lain.widget.mpd({
 				mpd_now.artist, mpd_now.album, mpd_now.date)
 		end
 
-		widget:set_markup(markup.font(theme.mpd_font, markup(theme.accent_color, state)))
+		widget:set_markup(markup.font(theme.mpd_font, markup(theme.normal_color, state)))
 		mpd_notification_preset = {
 			title = "Now playing",
 			timeout = 6,

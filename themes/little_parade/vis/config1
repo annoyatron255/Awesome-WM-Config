@@ -7,5 +7,5 @@ visualizer.spectrum.right.margin=0.22
 visualizer.spectrum.left.margin=0.005
 visualizer.spectrum.bar.width=1
 visualizer.spectrum.bar.spacing=3
-visualizer.spectrum.smoothing.mode=monstercat
+visualizer.spectrum.smoothing.mode=none
 colors.scheme=little_parade
