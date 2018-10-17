@@ -84,6 +84,7 @@ function focusable(clients)
 			table.insert(out_clients, c)
 		end
 	end
+	collectgarbage()
 	return out_clients
 end
 
@@ -101,7 +102,7 @@ end
 -- }}}
 
 -- {{{ Autostart
--- Accepts rules; however, the current release (4.2) applies rules in a weird order: many rules won't work
+-- Accepts rules; however, the current release (4.2) applies rules in a weird order: rules won't work
 local function run_once(cmd_arr)
 	for _, cmd in ipairs(cmd_arr) do
 		awful.spawn.easy_async_with_shell(string.format("pgrep -u $USER -x '%s' > /dev/null", cmd[1]),
@@ -116,15 +117,16 @@ end
 
 run_once({
 	{"xcompmgr"},
+	{"light-locker"},
 	{"urxvtd"},
 	{"redshift"},
 	{"unclutter"},
 	--{"nm-applet"},
 	--{"kdeconnect-indicator"},
 	{"firefox"},
-	{"ncmpcpp"},
+	{"ncmpcpp", {screen = 3}},
 	{"thunderbird", {screen = 3}},
-	{"steam"}
+	--{"steam", {screen = 2}}
 })
 
 -- Manually apply rules to certain clients due aforemetioned awesome 4.2 issues
@@ -182,17 +184,17 @@ awful.util.tasklist_buttons = gears.table.join(
 		if c == client.focus then
 			c.minimized = true
 		else
-			-- Without this, the following
-			-- :isvisible() makes no sense
 			c.minimized = false
-			if not c:isvisible() and c.first_tag then
-				c.first_tag:view_only()
-			end
-			-- This will also un-minimize
-			-- the client, if needed
-			client.focus = c
-			c:raise()
+			c:emit_signal("request::activate", "tasklist", {raise = true})
 		end
+	end),
+	awful.button({ }, 3, function(c)
+		for _, client in ipairs(c.screen.clients) do
+			client.minimized = true
+		end
+		c.minimized = false
+		c:emit_signal("request::activate", "tasklist", {raise = true})
+
 	end),
 	awful.button({ }, 4, function()
 		awful.client.focus.byidx(1)
@@ -231,7 +233,7 @@ globalkeys = gears.table.join(
 	),
 	awful.key({ modkey }, "x",
 		function()
-			awful.spawn("dm-tool lock")
+			awful.spawn("light-locker-command -l")
 		end,
 		{description = "lock screen", group = "awesome"}
 	),
@@ -341,8 +343,7 @@ globalkeys = gears.table.join(
 			local c = awful.client.restore()
 			-- Focus restored client
 			if c then
-				client.focus = c
-				c:raise()
+				c:emit_signal("request::activate", "key.unminimize", {raise = true})
 			end
 		end,
 		{description = "restore minimized", group = "client"}
@@ -464,8 +465,15 @@ globalkeys = gears.table.join(
 clientkeys = gears.table.join(
 	awful.key({ modkey }, "f",
 		function(c)
+			local opacity = c.fullscreen and 1 or 0
+			c.screen.mywibox.visible = c.fullscreen
 			c.fullscreen = not c.fullscreen
 			c:raise()
+			for _, client in ipairs(c.screen.clients) do
+				if client ~= c and awful.client.focus.filter(client) then
+					client.opacity = opacity
+				end
+			end
 		end,
 		{description = "toggle fullscreen", group = "client"}
 	),
@@ -527,6 +535,14 @@ clientkeys = gears.table.join(
 -- Be careful: we use keycodes to make it works on any keyboard layout
 -- This should map on the top row of your keyboard, usually 1 to 9
 for i = 1, 9 do
+	-- Hack to only show tags 1 and 9 in the shortcut window
+	local descr_view, descr_toggle, descr_move, descr_toggle_focus
+	if i == 1 or i == 9 then
+		descr_view = {description = "view tag #", group = "tag"}
+		descr_toggle = {description = "toggle tag #", group = "tag"}
+		descr_move = {description = "move client to tag #", group = "tag"}
+		descr_toggle_focus = {description = "toggle client tag #", group = "tag"}
+	end
 	globalkeys = gears.table.join(globalkeys,
 		-- View tag only
 		awful.key({ modkey, "Shift" }, "#" .. i + 9,
@@ -537,7 +553,7 @@ for i = 1, 9 do
 					tag:view_only()
 				end
 			end,
-			{description = "view tag #", group = "tag"}
+			descr_view
 		),
 		-- Toggle tag display
 		awful.key({ modkey }, "#" .. i + 9,
@@ -548,7 +564,7 @@ for i = 1, 9 do
 					awful.tag.viewtoggle(tag)
 				end
 			end,
-			{description = "toggle tag #", group = "tag"}
+			descr_toggle
 		),
 		-- Move client to tag
 		awful.key({ modkey, "Control", "Shift" }, "#" .. i + 9,
@@ -560,7 +576,7 @@ for i = 1, 9 do
 					end
 				end
 			end,
-			{description = "move client to tag #", group = "tag"}
+			descr_move
 		),
 		-- Toggle tag on focused client
 		awful.key({ modkey, "Control" }, "#" .. i + 9,
@@ -572,7 +588,7 @@ for i = 1, 9 do
 					end
 				end
 			end,
-			{description = "toggle client tag #", group = "tag"}
+			descr_toggle_focus
 		)
 	)
 end
@@ -582,17 +598,20 @@ end
 clientbuttons = gears.table.join(
 	awful.button({ }, 1,
 		function(c)
-			if awful.client.focus.filter(c) then
-				client.focus = c
-				c:raise()
-			end
+			c:emit_signal("request::activate", "mouse_click", {raise = true})
 		end
 	),
 	awful.button({ modkey }, 1,
-		awful.mouse.client.move
+		function(c)
+			c:emit_signal("request::activate", "mouse_click", {raise = true})
+			awful.mouse.client.move(c)
+		end
 	),
 	awful.button({ modkey }, 3,
-		awful.mouse.client.resize
+		function(c)
+			c:emit_signal("request::activate", "mouse_click", {raise = true})
+			awful.mouse.client.resize(c)
+		end
 	)
 )
 
@@ -636,7 +655,7 @@ awful.rules.rules = {
 	},
 	{
 		rule = { class = "URxvt", instance = "ncmpcpp" },
-		properties = { screen = 3, tag = beautiful.tagnames[3] }
+		properties = { tag = beautiful.tagnames[3] }
 	},
 	{
 		rule = { class = "URxvt", instance = "vis" },
@@ -658,11 +677,11 @@ awful.rules.rules = {
 	},
 	{
 		rule = { class = "Thunderbird" },
-		properties = { screen = 3, tag = beautiful.tagnames[4] }
+		properties = { tag = beautiful.tagnames[4] }
 	},
 	{
 		rule = { class = "Steam" },
-		properties = { screen = 2, tag = beautiful.tagnames[5] }
+		properties = { tag = beautiful.tagnames[5] }
 	}
 }
 -- }}}
@@ -691,7 +710,7 @@ function border_adjust(c)
 		titlebar_position = "top"
 	end
 
-	if #focusable(awful.screen.focused().clients) > 1 then
+	if #focusable(awful.screen.focused().clients) > 1 and not c.maximized then
 		awful.titlebar(c, {
 			size = titlebar_size,
 			position = titlebar_position
@@ -715,9 +734,10 @@ end)
 
 -- Enable sloppy focus, so that focus follows mouse.
 client.connect_signal("mouse::enter", function(c)
-	if awful.layout.get(c.screen) ~= awful.layout.suit.magnifier and awful.client.focus.filter(c) then
+	--[[if awful.layout.get(c.screen) ~= awful.layout.suit.magnifier and awful.client.focus.filter(c) then
 		client.focus = c
-	end
+	end--]]
+	c:emit_signal("request::activate", "mouse_enter", {raise = true})
 end)
 
 client.connect_signal("focus", border_adjust)
@@ -730,4 +750,3 @@ client.connect_signal("unfocus", function(c)
 	c.border_color = beautiful.border_normal
 end)
 -- }}}
-

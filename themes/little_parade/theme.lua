@@ -34,6 +34,7 @@ theme.mono_font					= "Fira Mono 10.5"
 theme.base_color				= "#000000F3"
 theme.normal_color				= "#BBBBBB"
 theme.accent_color				= "#11AAFC"
+theme.muted_color				= "#777777"
 theme.transparent				= "#00000000"
 
 theme.fg_normal					= theme.normal_color
@@ -45,13 +46,15 @@ theme.bg_urgent					= theme.normal_color
 
 theme.tasklist_bg_urgent			= theme.normal_color
 theme.tasklist_fg_urgent			= "#000000"
+theme.tasklist_fg_minimize			= theme.muted_color
 
 theme.border_normal				= theme.base_color
 theme.border_focus				= theme.accent_color
 
 theme.taglist_fg_focus				= theme.accent_color
 theme.taglist_bg_focus				= theme.transparent
-theme.taglist_bg_normal				= theme.transparent
+theme.taglist_fg_occupied			= theme.muted_color
+theme.taglist_bg_occupied			= theme.transparent
 
 theme.titlebar_bg_normal			= theme.base_color
 theme.titlebar_bg_focus				= theme.accent_color
