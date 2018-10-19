@@ -19,6 +19,8 @@ local hotkeys_popup = require("awful.hotkeys_popup").widget
 local hotkeys_popup_keys = require("awful.hotkeys_popup.keys")
 -- }}}
 
+collectgarbage("setstepmul", 10000)
+
 -- {{{ Error handling
 -- Startup errors
 if awesome.startup_errors then
@@ -84,9 +86,16 @@ function focusable(clients)
 			table.insert(out_clients, c)
 		end
 	end
-	collectgarbage()
 	return out_clients
 end
+
+gears.timer {
+	timeout = 60,
+	autostart = true,
+	callback = function()
+		collectgarbage()
+	end
+}
 
 -- Convert to string to terminal emulator syntax if in terminal_programs
 -- Also sets the instance of program to the command name; may need changing if terminal ~= urxvt(c)
@@ -181,11 +190,11 @@ awful.util.taglist_buttons = gears.table.join(
 
 awful.util.tasklist_buttons = gears.table.join(
 	awful.button({ }, 1, function(c)
-		if c == client.focus then
-			c.minimized = true
-		else
+		if c.floating and c ~= client.focus or c.minimized then
 			c.minimized = false
 			c:emit_signal("request::activate", "tasklist", {raise = true})
+		else
+			c.minimized = true
 		end
 	end),
 	awful.button({ }, 3, function(c)
@@ -352,7 +361,7 @@ globalkeys = gears.table.join(
 	-- Widget popups
 	awful.key({ modkey, "Control" }, "c",
 		function()
-			lain.widget.calendar.show(7)
+			beautiful.cal.show(7)
 		end,
 		{description = "calender popup", group = "launcher"}
 	),
@@ -734,12 +743,11 @@ end)
 
 -- Enable sloppy focus, so that focus follows mouse.
 client.connect_signal("mouse::enter", function(c)
-	--[[if awful.layout.get(c.screen) ~= awful.layout.suit.magnifier and awful.client.focus.filter(c) then
-		client.focus = c
-	end--]]
-	c:emit_signal("request::activate", "mouse_enter", {raise = true})
+	c:emit_signal("request::activate", "mouse_enter", {raise = false})
 end)
 
+client.connect_signal("property::position", border_adjust)
+--client.connect_signal("property::shape_bounding", border_adjust)
 client.connect_signal("focus", border_adjust)
 
 client.connect_signal("focus", function(c)

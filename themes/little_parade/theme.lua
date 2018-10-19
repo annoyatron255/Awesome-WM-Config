@@ -9,8 +9,7 @@ local lain = require("lain")
 local awful = require("awful")
 local wibox = require("wibox")
 local naughty = require("naughty")
-local os = { getenv = os.getenv, setlocale = os.setlocale }
-local awesome, client = awesome, client
+local awesome, client, os = awesome, client, os
 
 local theme					= {}
 theme.dir					= os.getenv("HOME") .. "/.config/awesome/themes/little_parade"
@@ -100,11 +99,13 @@ local mytextclock = wibox.widget.textclock(" %H:%M")
 mytextclock.font = theme.font
 
 -- Calender
-lain.widget.calendar({
+theme.cal = lain.widget.cal({
 	attach_to = { mytextclock },
 	followtag = true,
 	notification_preset = {
 		font = theme.mono_font,
+		fg = theme.normal_color,
+		bg = theme.base_color
 	}
 })
 
@@ -244,13 +245,13 @@ end
 -- ALSA volume
 theme.volume = lain.widget.alsabar({
 	notification_preset = {
-		font = theme.mono_font,
+		font = theme.mono_font
 	}
 })
 
 -- Weather
 theme.weather = lain.widget.weather({
-	city_id = 5025219, -- Eden Prairie
+	city_id = 5025219 -- Eden Prairie
 })
 
 -- Eminent-like task filtering
