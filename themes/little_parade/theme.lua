@@ -265,6 +265,7 @@ end
 local volume_textbox = wibox.widget.textbox()
 
 function theme.volume.notify_callback()
+	theme.volume.tooltip:remove_from_object(theme.volume.bar)
 	local backup_notification
 	if  theme.volume.notification then
 		backup_notification = theme.volume.notification
