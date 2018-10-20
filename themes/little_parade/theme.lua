@@ -111,36 +111,36 @@ theme.cal = lain.widget.cal({
 
 -- MPD
 function theme.mpd_toggle()
-	awful.spawn("mpc toggle")
+	os.execute("mpc toggle")
 	theme.mpd.update()
 end
 
 function theme.mpd_stop()
-	awful.spawn("mpc stop")
+	os.execute("mpc stop")
 	theme.mpd.update()
 end
 
 function theme.mpd_next()
-	awful.spawn("mpc next")
+	os.execute("mpc next")
 	theme.mpd.update()
 end
 
 function theme.mpd_prev()
-	awful.spawn("mpc prev")
+	os.execute("mpc prev")
 	theme.mpd.update()
 end
 
 function theme.mpd_repeat_cycle()
 	local repeat_mode
 	if mpd_now.repeat_mode and mpd_now.single_mode then
-		awful.spawn("mpc repeat off")
-		awful.spawn("mpc single off")
+		os.execute("mpc repeat off")
+		os.execute("mpc single off")
 		repeat_mode = "OFF"
 	elseif mpd_now.repeat_mode and not mpd_now.single_mode then
-		awful.spawn("mpc single on")
+		os.execute("mpc single on")
 		repeat_mode = "SINGLE"
 	else
-		awful.spawn("mpc repeat on")
+		os.execute("mpc repeat on")
 		repeat_mode = "ALL"
 	end
 	local notification_text = "Repeat: " .. repeat_mode
@@ -162,7 +162,7 @@ function theme.mpd_random_toggle()
 	else
 		random_mode = "ON"
 	end
-	awful.spawn("mpc random")
+	os.execute("mpc random")
 	local notification_text = "Random: " .. random_mode
 	if not theme.mpd.notification_random then
 		theme.mpd.notification_random = naughty.notify({
@@ -244,10 +244,51 @@ end
 
 -- ALSA volume
 theme.volume = lain.widget.alsabar({
+	width = 200,
+	height = 25,
+	colors = {
+		background = theme.base_color,
+		mute = theme.muted_color,
+		unmute = theme.normal_color
+	},
 	notification_preset = {
-		font = theme.mono_font
+		font = theme.mono_font,
+		fg = theme.fg_normal
 	}
 })
+
+function theme.volume.notify()
+	theme.volume.update(theme.volume.notify_callback)
+end
+
+local volume_textbox = wibox.widget.textbox()
+
+function theme.volume.notify_callback()
+	if  theme.volume.notification then
+		naughty.destroy(theme.volume.notification)
+	end
+	theme.volume.notification = naughty.notify({
+		height = 40,
+		width = 200,
+		destroy = function() theme.volume.notification = nil end
+	})
+	if volume_now.status == "on" then
+		volume_textbox:set_markup(markup.font(theme.mono_font, " Volume - " .. volume_now.level .. "%"))
+	else
+		volume_textbox:set_markup(markup.font(theme.mono_font, " Volume - " .. volume_now.level .. "% [Muted]"))
+	end
+	theme.volume.notification.box:setup {
+		layout = wibox.layout.fixed.vertical,
+		{
+			layout = wibox.layout.fixed.horizontal,
+			volume_textbox,
+		},
+		{
+			layout = wibox.layout.fixed.horizontal,
+			theme.volume.bar
+		}
+	}
+end
 
 -- Weather
 theme.weather = lain.widget.weather({
