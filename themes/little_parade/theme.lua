@@ -21,7 +21,7 @@ theme.useless_gap 				= 0
 theme.taglist_spacing				= 0
 theme.tasklist_disable_icon			= true
 theme.titlebar_size				= 1
-theme.floating_titlebar_size			= 10
+theme.floating_titlebar_size			= 5
 
 theme.wallpaper					= theme.dir .. "/wall.png"
 -- Fonts
@@ -257,6 +257,7 @@ theme.volume = lain.widget.alsabar({
 	}
 })
 
+-- Super hacky volume bar notifications
 function theme.volume.notify()
 	theme.volume.update(theme.volume.notify_callback)
 end
@@ -264,8 +265,10 @@ end
 local volume_textbox = wibox.widget.textbox()
 
 function theme.volume.notify_callback()
+	local backup_notification
 	if  theme.volume.notification then
-		naughty.destroy(theme.volume.notification)
+		backup_notification = theme.volume.notification
+		naughty.destroy(theme.volume.notification, naughty.notificationClosedReason.dismissedByCommand, true)
 	end
 	theme.volume.notification = naughty.notify({
 		height = 40,
@@ -288,6 +291,7 @@ function theme.volume.notify_callback()
 			theme.volume.bar
 		}
 	}
+	backup_notification.box.visible = false
 end
 
 -- Weather
