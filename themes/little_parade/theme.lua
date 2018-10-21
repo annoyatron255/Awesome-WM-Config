@@ -269,26 +269,33 @@ end
 local volume_textbox = wibox.widget.textbox()
 
 function theme.volume.notify_callback()
+	local text
+	if volume_now.status == "on" then
+		text = " Volume - " .. volume_now.level .. "%"
+	else
+		text = " Volume - " .. volume_now.level .. "% [Muted]"
+	end
 	local backup_notification
-	if  theme.volume.notification then
+	if theme.volume.notification then
 		backup_notification = theme.volume.notification
-		naughty.destroy(theme.volume.notification, naughty.notificationClosedReason.dismissedByCommand, true)
+		naughty.destroy(
+			theme.volume.notification,
+			naughty.notificationClosedReason.dismissedByCommand,
+			true
+		)
 	end
 	theme.volume.notification = naughty.notify({
+		text = text,
+		font = theme.mono_font,
 		height = 40,
 		width = 200,
 		destroy = function() theme.volume.notification = nil end
 	})
-	if volume_now.status == "on" then
-		volume_textbox:set_markup(markup.font(theme.mono_font, " Volume - " .. volume_now.level .. "%"))
-	else
-		volume_textbox:set_markup(markup.font(theme.mono_font, " Volume - " .. volume_now.level .. "% [Muted]"))
-	end
 	theme.volume.notification.box:setup {
 		layout = wibox.layout.fixed.vertical,
 		{
 			layout = wibox.layout.fixed.horizontal,
-			volume_textbox,
+			theme.volume.notification.textbox,
 		},
 		{
 			layout = wibox.layout.fixed.horizontal,
