@@ -113,11 +113,13 @@ theme.cal = lain.widget.cal({
 function theme.mpd_toggle()
 	os.execute("mpc toggle")
 	theme.mpd.update()
+	theme.mpd.timer:start()
 end
 
 function theme.mpd_stop()
 	os.execute("mpc stop")
 	theme.mpd.update()
+	theme.mpd.timer:stop()
 end
 
 function theme.mpd_next()
@@ -257,6 +259,8 @@ theme.volume = lain.widget.alsabar({
 	}
 })
 
+theme.volume.tooltip:remove_from_object(theme.volume.bar)
+
 -- Super hacky volume bar notifications
 function theme.volume.notify()
 	theme.volume.update(theme.volume.notify_callback)
@@ -265,7 +269,6 @@ end
 local volume_textbox = wibox.widget.textbox()
 
 function theme.volume.notify_callback()
-	theme.volume.tooltip:remove_from_object(theme.volume.bar)
 	local backup_notification
 	if  theme.volume.notification then
 		backup_notification = theme.volume.notification

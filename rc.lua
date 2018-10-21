@@ -649,13 +649,13 @@ awful.rules.rules = {
 
 	-- Titlebars
 	{
-		rule_any = { type = { "dialog", "normal" } },
+		rule_any = { type = { "dialog" } },
 		properties = { titlebars_enabled = true }
 	},
 	-- Special rules
 	{
 		rule = { class = "Firefox" },
-		properties = { tag = beautiful.tagnames[1], floating = false, switchtotag = true }
+		properties = { tag = beautiful.tagnames[1], floating = false }
 	},
 	{
 		rule = { class = "URxvt" },
@@ -698,7 +698,10 @@ awful.rules.rules = {
 -- {{{ Helper functions
 local titlebar_position = "top"
 
-function border_adjust(c)
+local function border_adjust(c)
+	if c.floating then
+		return
+	end
 	awful.titlebar.hide(c, "top")
 	awful.titlebar.hide(c, "bottom")
 	awful.titlebar.hide(c, "left")
@@ -708,10 +711,7 @@ function border_adjust(c)
 
 	local titlebar_size = beautiful.titlebar_size
 
-	if c.floating then
-		titlebar_position = "top"
-		titlebar_size = beautiful.floating_titlebar_size
-	elseif c.x - s.workarea["x"] - beautiful.titlebar_size <= 0 then
+	if c.x - s.workarea["x"] - beautiful.titlebar_size <= 0 then
 		titlebar_position = "left"
 	elseif c.x - s.workarea["x"] + c.width - s.workarea["width"] + beautiful.titlebar_size + 10 >= 0 then
 		titlebar_position = "right"
@@ -741,12 +741,33 @@ client.connect_signal("manage", function(c)
 	end
 end)
 
+client.connect_signal("request::titlebars", function(c)
+	local buttons = gears.table.join(
+		awful.button({ }, 1, function()
+			c:emit_signal("request::activate", "titlebar", {raise = true})
+			awful.mouse.client.move(c)
+		end),
+		awful.button({ }, 3, function()
+			c:emit_signal("request::activate", "titlebar", {raise = true})
+			awful.mouse.client.resize(c)
+		end)
+	)
+
+	awful.titlebar(c, {
+		size = beautiful.floating_titlebar_size,
+		position = "top"
+	}):setup {
+		buttons = buttons,
+		layout = wibox.layout.flex.horizontal
+	}
+end)
+
 -- Enable sloppy focus, so that focus follows mouse.
 client.connect_signal("mouse::enter", function(c)
 	c:emit_signal("request::activate", "mouse_enter", {raise = false})
 end)
 
-client.connect_signal("property::position", border_adjust)
+--client.connect_signal("property::position", border_adjust)
 --client.connect_signal("property::shape_bounding", border_adjust)
 client.connect_signal("focus", border_adjust)
 
