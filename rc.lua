@@ -318,7 +318,18 @@ globalkeys = gears.table.join(
 	-- Standard program
 	awful.key({ modkey }, "Return",
 		function()
-			awful.spawn(terminal)
+			--[[
+			Open in working directory of focused terminal,
+			to work put this in your .bashrc/.zshrc/etc.:
+			mkdir -p /tmp/urxvtc_ids/
+			echo $$ > /tmp/urxvtc_ids/$WINDOWID
+			--]]
+			local term_id = "/tmp/urxvtc_ids/" .. client.focus.window
+			awful.spawn.with_shell(terminal ..
+				" -cd $([ -f " .. term_id .. " ] && \
+				readlink -e /proc/$(cat " .. term_id .. ")/cwd || \
+				echo $HOME)"
+			)
 		end,
 		{description = "open a terminal", group = "launcher"}
 	),
