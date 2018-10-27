@@ -1,7 +1,7 @@
 --[[
 	annoytron255's awesome config
-	awesome 4.2
-	3 July 2018
+	awesome v4.2-489-g99fbe2ae
+	27 October 2018
 --]]
 
 -- {{{ Include libraries
