@@ -29,6 +29,8 @@ theme.font					= "Fira Sans Medium 10.5"
 theme.taglist_font				= "FontAwesome 10.5" -- FontAwesome v4.7
 theme.mpd_font					= "FontAwesome 6" -- FontAwesome v4.7
 theme.mono_font					= "Fira Mono 10.5"
+
+theme.hotkeys_font				= "Fira Mono 9"
 -- Colors
 theme.base_color				= "#000000F3"
 theme.normal_color				= "#BBBBBB"
@@ -329,6 +331,9 @@ client.connect_signal("focus", function()
 	awful.screen.focused().mylayoutbox:set_visible(false)
 end)
 
+-- Current mode status textbox
+theme.mymodebox = wibox.widget.textbox("")
+
 function theme.set_wallpaper(s)
 	-- Wallpaper
 	local wallpaper = theme.wallpaper
@@ -389,6 +394,7 @@ function theme.at_screen_connect(s)
 			layout = wibox.layout.fixed.horizontal,
 			s.mylayoutbox,
 			s.mytaglist,
+			theme.mymodebox,
 			s.mypromptbox
 		},
 		s.mytasklist, -- Middle widget

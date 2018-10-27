@@ -324,12 +324,16 @@ globalkeys = gears.table.join(
 			mkdir -p /tmp/urxvtc_ids/
 			echo $$ > /tmp/urxvtc_ids/$WINDOWID
 			--]]
-			local term_id = "/tmp/urxvtc_ids/" .. client.focus.window
-			awful.spawn.with_shell(terminal ..
-				" -cd $([ -f " .. term_id .. " ] && \
-				readlink -e /proc/$(cat " .. term_id .. ")/cwd || \
-				echo $HOME)"
-			)
+			if client.focus then
+				local term_id = "/tmp/urxvtc_ids/" .. client.focus.window
+				awful.spawn.with_shell(terminal ..
+					" -cd $([ -f " .. term_id .. " ] && \
+					readlink -e /proc/$(cat " .. term_id .. ")/cwd || \
+					echo $HOME)"
+				)
+			else
+				awful.spawn(terminal)
+			end
 		end,
 		{description = "open a terminal", group = "launcher"}
 	),
@@ -479,6 +483,87 @@ globalkeys = gears.table.join(
 			}
 		end,
 		{description = "run prompt", group = "launcher"}
+	),
+
+	-- Modes
+	awful.key({ modkey }, "z",
+		function()
+			root.keys(gears.table.join(globalkeys, modekeys, resizekeys))
+			beautiful.mymodebox.markup = lain.util.markup.font(beautiful.font, "-- RESIZE MODE --")
+		end,
+		{description = "resize mode", group = "modes"}
+	)
+)
+
+modekeys = gears.table.join(
+	awful.key({ }, "Escape",
+		function()
+			root.keys(globalkeys)
+			beautiful.mymodebox.text = ""
+		end,
+		{description = "normal mode", group = "modes"}
+	)
+)
+
+resizekeys = gears.table.join(
+	awful.key({ }, "h",
+		function()
+			awful.tag.incmwfact(-0.05)
+		end,
+		{description = "decrease master width factor", group = "resize mode"}
+	),
+	awful.key({ }, "l",
+		function()
+			awful.tag.incmwfact(0.05)
+		end,
+		{description = "increase master width factor", group = "resize mode"}
+	),
+	awful.key({ }, "j",
+		function()
+			awful.client.incwfact(-0.05)
+		end,
+		{description = "decrease client width factor", group = "resize mode"}
+	),
+	awful.key({ }, "k",
+		function()
+			awful.client.incwfact(0.05)
+		end,
+		{description = "increase client width factor", group = "resize mode"}
+	),
+	awful.key({ "Control" }, "h",
+		function()
+			awful.tag.incncol(-1)
+		end,
+		{description = "decrease number of columns", group = "resize mode"}
+	),
+	awful.key({ "Control" }, "l",
+		function()
+			awful.tag.incncol(1)
+		end,
+		{description = "increase number of columns", group = "resize mode"}
+	),
+	awful.key({ "Control" }, "j",
+		function()
+			awful.tag.incnmaster(-1)
+		end,
+		{description = "decrease number of masters", group = "resize mode"}
+	),
+	awful.key({ "Control" }, "k",
+		function()
+			awful.tag.incnmaster(1)
+		end,
+		{description = "increase number of masters", group = "resize mode"}
+	),
+	awful.key({ }, "r",
+		function()
+			local t = awful.tag.selected()
+			if t then
+				t.master_width_factor = 0.5
+				t.column_count = 1
+				t.master_count = 1
+			end
+		end,
+		{description = "reset size", group = "resize mode"}
 	)
 )
 
