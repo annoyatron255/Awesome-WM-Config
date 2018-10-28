@@ -199,7 +199,9 @@ awful.util.tasklist_buttons = gears.table.join(
 	end),
 	awful.button({ }, 3, function(c)
 		for _, client in ipairs(c.screen.clients) do
-			client.minimized = true
+			if awful.client.focus.filter(client) then
+				client.minimized = true
+			end
 		end
 		c.minimized = false
 		c:emit_signal("request::activate", "tasklist", {raise = true})
