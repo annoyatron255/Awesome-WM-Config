@@ -234,8 +234,10 @@ function theme.spawn_visualizer(s, terminal)
 	awful.spawn(terminal .. "\
 		-font 'xft:Fira Mono:size=10'\
 		-scollBar false\
+		-sl 0\
 		-depth 32\
 		-bg rgba:0000/0000/0000/0000\
+		--highlightColor rgba:0000/0000/0000/0000\
 		-lineSpace 14\
 		-letterSpace 0\
 		-name vis\
