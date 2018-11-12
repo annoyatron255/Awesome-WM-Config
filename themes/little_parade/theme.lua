@@ -104,6 +104,7 @@ mytextclock.font = theme.font
 theme.cal = lain.widget.cal({
 	attach_to = { mytextclock },
 	followtag = true,
+	week_start = 1,
 	notification_preset = {
 		font = theme.mono_font,
 		fg = theme.normal_color,
