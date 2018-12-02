@@ -108,6 +108,35 @@ local function parse_for_terminal_programs(cmd)
 	end
 	return cmd
 end
+
+local previous_coords = {}
+function mouse_media_callback(pointer_coords)
+	if previous_coords.y - pointer_coords.y >= 5 then
+		os.execute(string.format("amixer -q set %s 1%%+", beautiful.volume.channel))
+		beautiful.volume.notify()
+		mouse.coords {
+			y = previous_coords.y
+		}
+	elseif pointer_coords.y - previous_coords.y >= 5 then
+		os.execute(string.format("amixer -q set %s 1%%-", beautiful.volume.channel))
+		beautiful.volume.notify()
+		mouse.coords {
+			y = previous_coords.y
+		}
+	end
+	if previous_coords.x - pointer_coords.x >= 150 then
+		beautiful.mpd_prev()
+		mouse.coords {
+			x = previous_coords.x
+		}
+	elseif pointer_coords.x - previous_coords.x >= 150 then
+		beautiful.mpd_next()
+		mouse.coords {
+			x = previous_coords.x
+		}
+	end
+	return true
+end
 -- }}}
 
 -- {{{ Autostart
@@ -463,6 +492,20 @@ globalkeys = gears.table.join(
 			end
 		end,
 		{description = "toggle visualizer", group = "media"}
+	),
+
+	awful.key({ modkey }, "g",
+		function()
+			if not mousegrabber.isrunning() then
+				previous_coords.x = mouse.coords().x
+				previous_coords.y = mouse.coords().y
+				mousegrabber.run(mouse_media_callback, "cross")
+			end
+		end,
+		function()
+			mousegrabber.stop()
+		end,
+		{description = "mouse media gestures", group = "media"}
 	),
 
 	-- Prompt
