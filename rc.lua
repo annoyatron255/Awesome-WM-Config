@@ -284,6 +284,7 @@ globalkeys = gears.table.join(
 			if record_pid then
 				awful.spawn("kill -s SIGINT " .. record_pid)
 				record_pid = nil
+				beautiful.myrecordbox.text = ""
 			else
 				local s = mouse.screen
 				record_pid = awful.spawn("ffmpeg -video_size " ..
@@ -293,6 +294,8 @@ globalkeys = gears.table.join(
 					" -c:v libx264 -crf 18 -preset ultrafast " ..
 					os.getenv("HOME") .. "/Videos/ScreenRecord/" ..
 					os.date("%Y-%m-%d@%H:%M:%S") .. ".mp4")
+				beautiful.myrecordbox.markup = lain.util.markup.font(
+					beautiful.mpd_font, " " .. utf8.char(0xf03d))
 			end
 		end,
 		{description = "record current screen", group = "awesome"}

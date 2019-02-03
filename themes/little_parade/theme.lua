@@ -337,6 +337,15 @@ end)
 -- Current mode status textbox
 theme.mymodebox = wibox.widget.textbox("")
 
+theme.myrecordbox = wibox.widget.textbox("")
+theme.myrecordbox:buttons(gears.table.join(
+	awful.button({ }, 1, function()
+		awful.spawn("kill -s SIGINT " .. record_pid)
+		record_pid = nil
+		theme.myrecordbox.text = ""
+	end)
+))
+
 function theme.set_wallpaper(s)
 	-- Wallpaper
 	local wallpaper = theme.wallpaper
@@ -405,6 +414,7 @@ function theme.at_screen_connect(s)
 			layout = wibox.layout.fixed.horizontal,
 			mysystray,
 			theme.mpd.widget,
+			theme.myrecordbox,
 			mytextclock
 		}
 	}
