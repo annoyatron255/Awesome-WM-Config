@@ -270,9 +270,32 @@ root.buttons(gears.table.join(
 globalkeys = gears.table.join(
 	awful.key({ modkey }, "p",
 		function()
-			awful.spawn.with_shell("import -window root $HOME/Pictures/ScreenShots/$(date +%Y%m%d%H%M%S).png")
+			local s_geo = mouse.screen.geometry
+			awful.spawn("import -window root -crop " ..
+				s_geo.width .. "x" .. s_geo.height ..
+				"+" .. s_geo.x .. "+" .. s_geo.y ..
+				" " .. os.getenv("HOME") .. "/Pictures/ScreenShots/" ..
+				os.date("%Y-%m-%d@%H:%M:%S") .. ".png")
 		end,
-		{description = "take screenshot", group = "awesome"}
+		{description = "screenshot current screen", group = "awesome"}
+	),
+	awful.key({ modkey, "Control" }, "p",
+		function()
+			if record_pid then
+				awful.spawn("kill -s SIGINT " .. record_pid)
+				record_pid = nil
+			else
+				local s = mouse.screen
+				record_pid = awful.spawn("ffmpeg -video_size " ..
+					s.geometry.width .. "x" .. s.geometry.height ..
+					" -framerate 60 -f x11grab -i :0.0+" ..
+					s.geometry.x .. "," .. s.geometry.y ..
+					" -c:v libx264 -crf 18 -preset ultrafast " ..
+					os.getenv("HOME") .. "/Videos/ScreenRecord/" ..
+					os.date("%Y-%m-%d@%H:%M:%S") .. ".mp4")
+			end
+		end,
+		{description = "record current screen", group = "awesome"}
 	),
 	awful.key({ modkey }, "x",
 		function()
