@@ -226,6 +226,9 @@ awful.util.tasklist_buttons = gears.table.join(
 			c.minimized = true
 		end
 	end),
+	awful.button({ }, 2, function(c)
+		c:kill()
+	end),
 	awful.button({ }, 3, function(c)
 		for _, client in ipairs(c.screen.clients) do
 			if awful.client.focus.filter(client) then
