@@ -154,16 +154,36 @@ local function run_once(cmd_arr)
 end
 
 run_once({
-	{"xcompmgr"},
-	{"light-locker"},
 	{"urxvtd"},
+	-- See https://github.com/annoyatron255/compton-shaders
+	{"compton --backend glx --force-win-blend --glx-fshader-win '\
+		uniform float opacity;\
+		uniform bool invert_color;\
+		uniform sampler2D tex;\
+		void main() {\
+			vec4 c = texture2D(tex, gl_TexCoord[0].xy);\
+			if (!invert_color) { // Hack to allow compton exceptions\
+				// Change the vec4 to your desired key color\
+				vec4 vdiff = abs(vec4(0.0, 0.0039, 0.0, 1.0) - c); // #000100\
+				float diff = max(max(max(vdiff.r, vdiff.g), vdiff.b), vdiff.a);\
+				// Change the vec4 to your desired output color\
+				if (diff < 0.001)\
+					c = vec4(0.0, 0.0, 0.0, 0.890196); // #000000E3\
+			}\
+			c *= opacity;\
+			gl_FragColor = c;\
+		}'\
+	"};
+	{"easystroke"},
+	{"libinput-gestures"},
+	{"light-locker"},
+	{"xmodmap ~/.Xmodmap"},
 	{"redshift"},
 	{"unclutter"},
-	--{"nm-applet"},
-	--{"kdeconnect-indicator"},
+	{"nm-applet"},
 	{"firefox"},
-	{"ncmpcpp", {screen = 3}},
-	{"thunderbird", {screen = 3}},
+	{"ncmpcpp"},
+	--{"thunderbird", {screen = 3}},
 	--{"steam", {screen = 2}}
 })
 
@@ -471,6 +491,24 @@ globalkeys = gears.table.join(
 		end,
 		{description = "toggle ALSA volume", group = "media"}
 	),
+	awful.key({ }, "XF86AudioRaiseVolume",
+		function()
+			os.execute(string.format("amixer -q set %s 1%%+", beautiful.volume.channel))
+			beautiful.volume.notify()
+		end
+	),
+	awful.key({ }, "XF86AudioLowerVolume",
+		function()
+			os.execute(string.format("amixer -q set %s 1%%-", beautiful.volume.channel))
+			beautiful.volume.notify()
+		end
+	),
+	awful.key({ }, "XF86AudioMute",
+		function()
+			os.execute(string.format("amixer -q set %s toggle", beautiful.volume.togglechannel or beautiful.volume.channel))
+			beautiful.volume.notify()
+		end
+	),
 
 	-- MPD Control
 	awful.key({ modkey }, "]",
@@ -537,6 +575,21 @@ globalkeys = gears.table.join(
 		{description = "mouse media gestures", group = "media"}
 	),
 
+	-- Brightness
+	awful.key({ }, "XF86MonBrightnessUp",
+		function()
+			awful.spawn("xbacklight + 2")
+		end,
+		{description = "increase brightness", group = "awesome"}
+	),
+
+	awful.key({ }, "XF86MonBrightnessDown",
+		function()
+			awful.spawn("xbacklight - 2")
+		end,
+		{description = "decrease brightness", group = "awesome"}
+	),
+
 	-- Prompt
 	awful.key({ modkey }, "r",
 		function()
@@ -552,7 +605,7 @@ globalkeys = gears.table.join(
 				history_path = gears.filesystem.get_dir("cache") .. "/history",
 				completion_callback = awful.completion.shell,
 				exe_callback = function(cmd)
-					awful.spawn.with_shell(cmd)
+					awful.spawn.with_shell("source $HOME/.zshrc && " .. cmd)
 				end
 			}
 		end,
@@ -824,8 +877,8 @@ awful.rules.rules = {
 	},
 	-- Special rules
 	{
-		rule = { class = "Firefox" },
-		properties = { tag = beautiful.tagnames[1], floating = false }
+		rule = { class = "firefox" },
+		properties = { tag = beautiful.tagnames[1] }
 	},
 	{
 		rule = { class = "URxvt" },
@@ -852,6 +905,10 @@ awful.rules.rules = {
 	},
 	{
 		rule = { class = "vlc" },
+		properties = { tag = beautiful.tagnames[3] }
+	},
+	{
+		rule = { class = "mpv" },
 		properties = { tag = beautiful.tagnames[3] }
 	},
 	{

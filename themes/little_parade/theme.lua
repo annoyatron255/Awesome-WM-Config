@@ -32,8 +32,8 @@ theme.mono_font					= "Fira Mono 10.5"
 
 theme.hotkeys_font				= "Fira Mono 9"
 -- Colors
-theme.base_color				= "#000000F3"
-theme.normal_color				= "#BBBBBB"
+theme.base_color				= "#000000E3"
+theme.normal_color				= "#FFFFFF"
 theme.accent_color				= "#11AAFC"
 theme.muted_color				= "#777777"
 theme.transparent				= "#00000000"
@@ -247,7 +247,14 @@ function theme.spawn_visualizer(s, terminal)
 	)
 end
 
-----Battery
+--Battery
+local bat = lain.widget.bat({
+	settings = function()
+		local perc = bat_now.perc
+		if bat_now.ac_status == 1 then perc = "AC" end
+		widget:set_markup(markup.font(theme.font, " " .. perc .. "%"))
+	end
+})
 
 -- ALSA volume
 theme.volume = lain.widget.alsabar({
@@ -415,6 +422,7 @@ function theme.at_screen_connect(s)
 			mysystray,
 			theme.mpd.widget,
 			theme.myrecordbox,
+			bat.widget,
 			mytextclock
 		}
 	}
