@@ -278,43 +278,36 @@ function theme.volume.notify()
 	theme.volume.update(theme.volume.notify_callback)
 end
 
-local volume_textbox = wibox.widget.textbox()
-
 function theme.volume.notify_callback()
 	local text
 	if volume_now.status == "on" then
 		text = " Volume - " .. volume_now.level .. "%"
 	else
-		text = " Volume - " .. volume_now.level .. "% [Muted]"
+		text = " Volume - " .. volume_now.level .. "% [M]"
 	end
-	local backup_notification
-	if theme.volume.notification then
-		backup_notification = theme.volume.notification
-		naughty.destroy(
-			theme.volume.notification,
-			naughty.notificationClosedReason.dismissedByCommand,
-			true
-		)
-	end
-	theme.volume.notification = naughty.notify({
-		text = text,
-		font = theme.mono_font,
-		height = 40,
-		width = 200,
-		destroy = function() theme.volume.notification = nil end
-	})
-	theme.volume.notification.box:setup {
-		layout = wibox.layout.fixed.vertical,
-		{
-			layout = wibox.layout.fixed.horizontal,
-			theme.volume.notification.textbox,
-		},
-		{
-			layout = wibox.layout.fixed.horizontal,
-			theme.volume.bar
+
+	if not theme.volume.notification then
+		theme.volume.notification = naughty.notify({
+			text = text,
+			font = theme.mono_font,
+			height = 40,
+			width = 200,
+			destroy = function() theme.volume.notification = nil end
+		})
+		theme.volume.notification.box:setup {
+			layout = wibox.layout.fixed.vertical,
+			{
+				layout = wibox.layout.fixed.horizontal,
+				theme.volume.notification.textbox,
+			},
+			{
+				layout = wibox.layout.fixed.horizontal,
+				theme.volume.bar
+			}
 		}
-	}
-	backup_notification.box.visible = false
+	else
+		naughty.replace_text(theme.volume.notification, nil, text)
+	end
 end
 
 -- Weather
