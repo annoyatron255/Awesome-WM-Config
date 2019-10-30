@@ -6,6 +6,7 @@
 
 local gears = require("gears")
 local lain = require("lain")
+local helpers = require("lain.helpers")
 local awful = require("awful")
 local wibox = require("wibox")
 local naughty = require("naughty")
@@ -92,8 +93,11 @@ theme.tagnames = {
 	utf8.char(0xf120), -- Terminal
 	utf8.char(0xf001), -- Music
 	utf8.char(0xf0e0), -- Mail
+	utf8.char(0xf15b), -- Documents
 	utf8.char(0xf1b6), -- Steam
-	"6", "7", "8", "9"
+	"7", "8", "9",
+	"F1", "F2", "F3", "F4", "F5", "F6",
+	"F7", "F8", "F9", "F10", "F11", "F12"
 }
 
 -- Textclock
@@ -195,10 +199,12 @@ theme.mpd = lain.widget.mpd({
 			state = ""
 		end
 
-		if mpd_now.title == "N/A" then
+		if mpd_now.name ~= "N/A" then
+			notification_text = mpd_now.name
+		elseif mpd_now.title == "N/A" then
 			notification_text = mpd_now.file:match("^.+/(.+)%.")
 		else
-			notification_text = string.format("%s\n%s (%s) - %s", mpd_now.title,
+			notification_text = string.format("%s\n%s\n(%s) - %s", mpd_now.title,
 				mpd_now.artist, mpd_now.album, mpd_now.date)
 		end
 
@@ -250,9 +256,13 @@ end
 --Battery
 local bat = lain.widget.bat({
 	settings = function()
-		local perc = bat_now.perc
-		if bat_now.ac_status == 1 then perc = "AC" end
-		widget:set_markup(markup.font(theme.font, " " .. perc .. "%"))
+		local status
+		if bat_now.status == "Charging" or bat_now.ac_status == 1 then
+			status = "+"
+		else
+			status = "%"
+		end
+		widget:set_markup(markup(theme.normal_color, markup.font(theme.font, " " .. bat_now.perc .. status)))
 	end
 })
 
@@ -273,7 +283,7 @@ theme.volume = lain.widget.alsabar({
 
 theme.volume.tooltip:remove_from_object(theme.volume.bar)
 
--- Super hacky volume bar notifications
+-- Volume bar notification
 function theme.volume.notify()
 	theme.volume.update(theme.volume.notify_callback)
 end
@@ -308,6 +318,59 @@ function theme.volume.notify_callback()
 	else
 		naughty.replace_text(theme.volume.notification, nil, text)
 	end
+end
+
+-- Brightness bar notification
+theme.brightness = {}
+
+theme.brightness.bar = wibox.widget {
+	color            = theme.normal_color,
+	background_color = theme.transparent,
+	forced_width     = 200,
+	forced_height    = 25,
+	margins          = 1,
+	paddings         = 1,
+	ticks            = false,
+	widget           = wibox.widget.progressbar
+}
+
+
+function theme.brightness.notify()
+	awful.spawn.easy_async_with_shell("xbacklight", function(cmd_out)
+		local val = math.floor(tonumber(cmd_out))
+
+		if not val then return end
+
+		if val ~= theme.brightness.brightness_now then
+			theme.brightness.brightness_now = val
+			theme.brightness.bar:set_value(theme.brightness.brightness_now / 100)
+
+			local text = " Brightness - " .. theme.brightness.brightness_now .. "%"
+
+			if not theme.brightness.notification then
+				theme.brightness.notification = naughty.notify({
+					text = text,
+					font = theme.mono_font,
+					width = 200,
+					height = 40,
+					destroy = function() theme.brightness.notification = nil end
+				})
+				theme.brightness.notification.box:setup {
+					layout = wibox.layout.fixed.vertical,
+					{
+						layout = wibox.layout.fixed.horizontal,
+						theme.brightness.notification.textbox
+					},
+					{
+						layout = wibox.layout.fixed.horizontal,
+						theme.brightness.bar
+					}
+				}
+			else
+				naughty.replace_text(theme.brightness.notification, nil, text)
+			end
+		end
+	end)
 end
 
 -- Weather

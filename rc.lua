@@ -156,7 +156,7 @@ end
 run_once({
 	{"urxvtd"},
 	-- See https://github.com/annoyatron255/compton-shaders
-	{"compton --backend glx --force-win-blend --glx-fshader-win '\
+	{"compton --backend glx --force-win-blend --use-damage --glx-fshader-win '\
 		uniform float opacity;\
 		uniform bool invert_color;\
 		uniform sampler2D tex;\
@@ -183,7 +183,7 @@ run_once({
 	{"nm-applet"},
 	{"firefox"},
 	{"ncmpcpp"},
-	--{"thunderbird", {screen = 3}},
+	{"thunderbird"},
 	--{"steam", {screen = 2}}
 })
 
@@ -472,14 +472,16 @@ globalkeys = gears.table.join(
 	-- ALSA volume control
 	awful.key({ modkey }, "=",
 		function()
-			os.execute(string.format("amixer -q set %s 1%%+", beautiful.volume.channel))
+			--os.execute(string.format("amixer -q set %s 1%%+", beautiful.volume.channel))
+			awful.spawn("pactl set-sink-volume 0 +1%")
 			beautiful.volume.notify()
 		end,
 		{description = "increase ALSA volume", group = "media"}
 	),
 	awful.key({ modkey }, "-",
 		function()
-			os.execute(string.format("amixer -q set %s 1%%-", beautiful.volume.channel))
+			--os.execute(string.format("amixer -q set %s 1%%-", beautiful.volume.channel))
+			awful.spawn("pactl set-sink-volume 0 -1%")
 			beautiful.volume.notify()
 		end,
 		{description = "decrease ALSA volume", group = "media"}
@@ -493,13 +495,15 @@ globalkeys = gears.table.join(
 	),
 	awful.key({ }, "XF86AudioRaiseVolume",
 		function()
-			os.execute(string.format("amixer -q set %s 1%%+", beautiful.volume.channel))
+			--os.execute(string.format("amixer -q set %s 1%%+", beautiful.volume.channel))
+			awful.spawn("pactl set-sink-volume 0 +1%")
 			beautiful.volume.notify()
 		end
 	),
 	awful.key({ }, "XF86AudioLowerVolume",
 		function()
-			os.execute(string.format("amixer -q set %s 1%%-", beautiful.volume.channel))
+			--os.execute(string.format("amixer -q set %s 1%%-", beautiful.volume.channel))
+			awful.spawn("pactl set-sink-volume 0 -1%")
 			beautiful.volume.notify()
 		end
 	),
@@ -578,16 +582,43 @@ globalkeys = gears.table.join(
 	-- Brightness
 	awful.key({ }, "XF86MonBrightnessUp",
 		function()
-			awful.spawn("xbacklight + 2")
-		end,
-		{description = "increase brightness", group = "awesome"}
+			awful.spawn("xbacklight + 5")
+			beautiful.brightness.notify()
+		end
 	),
 
 	awful.key({ }, "XF86MonBrightnessDown",
+	--awful.key({ modkey, "Control" }, "-",
 		function()
-			awful.spawn("xbacklight - 2")
+			awful.spawn("xbacklight - 5")
+			beautiful.brightness.notify()
+		end
+	),
+
+	-- Display key
+	awful.key({ }, "XF86Display",
+		function()
+			awful.spawn.raise_or_spawn("lxrandr")
 		end,
-		{description = "decrease brightness", group = "awesome"}
+		{description = "spawn lxrandr", group = "launcher"}
+	),
+
+	awful.key({ }, "XF86Launch1",
+		function()
+			for c in awful.client.iterate(function (c) return awful.rules.match(c, {class = "WP-34s"}) end) do
+				if c ~= client.focus then
+					client.focus = c
+					c:raise()
+					return
+				else
+					c:kill()
+					return
+				end
+			end
+
+			awful.spawn("/home/jack/Junk/wp-34s/WP-34s")
+		end,
+		{description = "spawn calculator", group = "launcher"}
 	),
 
 	-- Prompt
@@ -610,6 +641,38 @@ globalkeys = gears.table.join(
 			}
 		end,
 		{description = "run prompt", group = "launcher"}
+	),
+
+	awful.key({ modkey }, "`",
+		function()
+			local og_c = client.focus
+
+			if og_c == nil then
+				return
+			end
+
+			local matcher = function(c)
+				return (c.window == og_c.window or
+					awful.widget.tasklist.filter.minimizedcurrenttags(c, c.screen))
+					and c:tags()[#c:tags()] == og_c:tags()[#og_c:tags()]
+			end
+
+			local n = 0
+			for c in awful.client.iterate(matcher) do
+				if n == 0 then
+				elseif n == 1 then
+					og_c.minimized = true
+					c.minimized = false
+					client.focus = c
+					c:raise()
+				else
+					c.minimized = true
+				end
+				c:swap(og_c)
+				n = n + 1
+			end
+		end,
+		{description = "cycle stack", group = "tag"}
 	),
 
 	-- Modes
@@ -763,21 +826,30 @@ clientkeys = gears.table.join(
 	)
 )
 
+local tag_keys = {
+	"1", "2", "3", "4", "5", "6", "7", "8", "9",
+	"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
+	"XF86AudioMute", "XF86AudioLowerVolume", "XF86AudioRaiseVolume", "XF86AudioMicMute",
+	"XF86MonBrightnessDown", "XF86MonBrightnessUp", "XF86Display", "XF86WLAN",
+	"XF86Tools", "XF86Bluetooth", "XF86Launch1", "XF86Favorites"
+}
+
 -- Bind all key numbers to tags
--- Be careful: we use keycodes to make it works on any keyboard layout
--- This should map on the top row of your keyboard, usually 1 to 9
-for i = 1, 9 do
+for i, k in ipairs(tag_keys) do
 	-- Hack to only show tags 1 and 9 in the shortcut window
 	local descr_view, descr_toggle, descr_move, descr_toggle_focus
-	if i == 1 or i == 9 then
-		descr_view = {description = "view tag #", group = "tag"}
-		descr_toggle = {description = "toggle tag #", group = "tag"}
-		descr_move = {description = "move client to tag #", group = "tag"}
-		descr_toggle_focus = {description = "toggle client tag #", group = "tag"}
+	if i == 1 or i == 9 or i == 10 or i == 21 then
+		descr_view = {description = "view tag", group = "tag"}
+		descr_toggle = {description = "toggle tag", group = "tag"}
+		descr_move = {description = "move client to tag", group = "tag"}
+		descr_toggle_focus = {description = "toggle client tag", group = "tag"}
+	end
+	if i > 21 then -- Duplicate F1-F12 for Thinkpad's non-function locked keys
+		i = i - 12
 	end
 	globalkeys = gears.table.join(globalkeys,
 		-- View tag only
-		awful.key({ modkey, "Shift" }, "#" .. i + 9,
+		awful.key({ modkey, "Shift" }, k,
 			function()
 				local screen = awful.screen.focused()
 				local tag = screen.tags[i]
@@ -788,7 +860,7 @@ for i = 1, 9 do
 			descr_view
 		),
 		-- Toggle tag display
-		awful.key({ modkey }, "#" .. i + 9,
+		awful.key({ modkey }, k,
 			function()
 				local screen = awful.screen.focused()
 				local tag = screen.tags[i]
@@ -799,7 +871,7 @@ for i = 1, 9 do
 			descr_toggle
 		),
 		-- Move client to tag
-		awful.key({ modkey, "Control", "Shift" }, "#" .. i + 9,
+		awful.key({ modkey, "Control", "Shift" }, k,
 			function()
 				if client.focus then
 					local tag = client.focus.screen.tags[i]
@@ -811,7 +883,7 @@ for i = 1, 9 do
 			descr_move
 		),
 		-- Toggle tag on focused client
-		awful.key({ modkey, "Control" }, "#" .. i + 9,
+		awful.key({ modkey, "Control" }, k,
 			function()
 				if client.focus then
 					local tag = client.focus.screen.tags[i]
@@ -837,6 +909,11 @@ clientbuttons = gears.table.join(
 		function(c)
 			c:emit_signal("request::activate", "mouse_click", {raise = true})
 			awful.mouse.client.move(c)
+		end
+	),
+	awful.button({ modkey }, 2,
+		function(c)
+			c:kill()
 		end
 	),
 	awful.button({ modkey }, 3,
@@ -917,7 +994,24 @@ awful.rules.rules = {
 	},
 	{
 		rule = { class = "Steam" },
+		properties = { tag = beautiful.tagnames[6] }
+	},
+	{
+		rule = { class = "Zathura" },
 		properties = { tag = beautiful.tagnames[5] }
+	},
+	{
+		rule = { class = "libreoffice" },
+		properties = { tag = beautiful.tagnames[5] }
+	},
+	{
+		rule = { class = "WP-34s" },
+		properties = {
+			placement = awful.placement.right,
+			is_fixed = true,
+			skip_taskbar = true,
+			ontop = true
+		}
 	}
 }
 -- }}}

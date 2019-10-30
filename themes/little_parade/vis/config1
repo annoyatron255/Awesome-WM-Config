@@ -1,5 +1,6 @@
-mpd.fifo.path=/tmp/mpd1.fifo
-audio.sources=mpd
+#mpd.fifo.path=/tmp/mpd1.fifo
+#audio.sources=mpd
+audio.sources=pulse
 visualizer.spectrum.character=●
 #audio.stereo.enabled=false
 visualizer.spectrum.bottom.margin=0.55
