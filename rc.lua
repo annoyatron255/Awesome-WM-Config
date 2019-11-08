@@ -137,6 +137,16 @@ function mouse_media_callback(pointer_coords)
 	end
 	return true
 end
+
+-- Make awesome use last tag's rather than first tag's layout
+function awful.screen.object.get_selected_tag(s)
+	local tags = awful.screen.object.get_selected_tags(s)
+	if string.match(debug.getinfo(3, "S").source, "layout") then
+		return tags[#tags]
+	end
+	return tags[1]
+end
+
 -- }}}
 
 -- {{{ Autostart
@@ -674,6 +684,42 @@ globalkeys = gears.table.join(
 		end,
 		{description = "cycle stack", group = "tag"}
 	),
+	awful.key({ modkey, "Control" }, "`",
+		function()
+			local og_c = client.focus
+
+			if og_c == nil then
+				return
+			end
+
+			local matcher = function(c)
+				return awful.widget.tasklist.filter.minimizedcurrenttags(c, c.screen)
+					and c:tags()[#c:tags()] == og_c:tags()[#og_c:tags()]
+			end
+
+			local stack = {}
+			for c in awful.client.iterate(matcher) do
+				stack[#stack+1] = c
+			end
+			stack[#stack+1] = og_c
+
+			local n = 0
+			for _, c in ipairs(gears.table.reverse(stack))  do
+				if n == 0 then
+				elseif n == 1 then
+					og_c.minimized = true
+					c.minimized = false
+					client.focus = c
+					c:raise()
+				else
+					c.minimized = true
+				end
+				c:swap(og_c)
+				n = n + 1
+			end
+		end,
+		{description = "reverse cycle stack", group = "tag"}
+	),
 
 	-- Modes
 	awful.key({ modkey }, "z",
@@ -698,13 +744,15 @@ modekeys = gears.table.join(
 resizekeys = gears.table.join(
 	awful.key({ }, "h",
 		function()
-			awful.tag.incmwfact(-0.05)
+			local tags = awful.screen.focused().selected_tags
+			awful.tag.incmwfact(-0.05, tags[#tags])
 		end,
 		{description = "decrease master width factor", group = "resize mode"}
 	),
 	awful.key({ }, "l",
 		function()
-			awful.tag.incmwfact(0.05)
+			local tags = awful.screen.focused().selected_tags
+			awful.tag.incmwfact(0.05, tags[#tags])
 		end,
 		{description = "increase master width factor", group = "resize mode"}
 	),
@@ -722,31 +770,36 @@ resizekeys = gears.table.join(
 	),
 	awful.key({ "Control" }, "h",
 		function()
-			awful.tag.incncol(-1)
+			local tags = awful.screen.focused().selected_tags
+			awful.tag.incncol(-1, tags[#tags])
 		end,
 		{description = "decrease number of columns", group = "resize mode"}
 	),
 	awful.key({ "Control" }, "l",
 		function()
-			awful.tag.incncol(1)
+			local tags = awful.screen.focused().selected_tags
+			awful.tag.incncol(1, tags[#tags])
 		end,
 		{description = "increase number of columns", group = "resize mode"}
 	),
 	awful.key({ "Control" }, "j",
 		function()
-			awful.tag.incnmaster(-1)
+			local tags = awful.screen.focused().selected_tags
+			awful.tag.incnmaster(-1, tags[#tags])
 		end,
 		{description = "decrease number of masters", group = "resize mode"}
 	),
 	awful.key({ "Control" }, "k",
 		function()
-			awful.tag.incnmaster(1)
+			local tags = awful.screen.focused().selected_tags
+			awful.tag.incnmaster(1, tags[#tags])
 		end,
 		{description = "increase number of masters", group = "resize mode"}
 	),
 	awful.key({ }, "r",
 		function()
-			local t = awful.tag.selected()
+			local tags = awful.screen.focused().selected_tags
+			local t = tags[#tags]
 			if t then
 				t.master_width_factor = 0.5
 				t.column_count = 1
