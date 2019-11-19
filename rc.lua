@@ -81,13 +81,21 @@ local function popup_program(cmd)
 	return terminal .. " -name popup -geometry 160x20 -e zsh -c \"source ~/.zshrc && " .. cmd .. "\""
 end
 
+local function popup_when_no_args(cmd)
+	if cmd:match(" ") then
+		return cmd
+	else
+		return popup_program(cmd)
+	end
+end
+
 local special_run_commands = {
 	{"ncmpcpp", terminal_program},
 	{"vim", terminal_program},
 	{"htop", terminal_program},
 	{"top", terminal_program},
 	{"man", terminal_program},
-	{"ms", popup_program}
+	{"m", popup_when_no_args}
 }
 
 local function parse_for_special_run_commands(in_cmd)
