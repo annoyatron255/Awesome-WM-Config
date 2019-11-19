@@ -51,7 +51,7 @@ local terminal = "urxvtc" -- Other terminals not tested or recommended and will 
 local editor = os.getenv("EDITOR") or "vim"
 local chosen_theme = "little_parade"
 
-local terminal_programs = {"ncmpcpp", "vim", "htop", "top", "man"}
+
 
 local theme_path = string.format("%s/.config/awesome/themes/%s/theme.lua", os.getenv("HOME"), chosen_theme)
 beautiful.init(theme_path)
@@ -68,6 +68,38 @@ awful.layout.layouts = {
 	awful.layout.suit.fair.horizontal,
 }
 -- }}}
+
+-- {{{ Special run prompt commands
+-- Convert to string to terminal emulator syntax if in terminal_programs
+-- Also sets the instance of program to the command name; may need changing if terminal ~= urxvt(c)
+local function terminal_program(cmd)
+	local program = cmd:match("^([^ ]+)")
+	return terminal .. " -name " .. program .. " -e " .. cmd
+end
+
+local function popup_program(cmd)
+	return terminal .. " -name popup -geometry 160x20 -e zsh -c \"source ~/.zshrc && " .. cmd .. "\""
+end
+
+local special_run_commands = {
+	{"ncmpcpp", terminal_program},
+	{"vim", terminal_program},
+	{"htop", terminal_program},
+	{"top", terminal_program},
+	{"man", terminal_program},
+	{"ms", popup_program}
+}
+
+local function parse_for_special_run_commands(in_cmd)
+	local command = in_cmd:match("^([^ ]+)")
+	for _, cmd in ipairs(special_run_commands) do
+		if command == cmd[1] then
+			return cmd[2](in_cmd)
+		end
+	end
+	return in_cmd
+end
+-- }}} Special run prompt commands
 
 -- {{{ Helper functions
 local function client_instance_exists(clients, instance)
@@ -96,18 +128,6 @@ gears.timer {
 		collectgarbage()
 	end
 }
-
--- Convert to string to terminal emulator syntax if in terminal_programs
--- Also sets the instance of program to the command name; may need changing if terminal ~= urxvt(c)
-local function parse_for_terminal_programs(cmd)
-	local program = cmd:match("^([^ ]+)")
-	for _, p in ipairs(terminal_programs) do
-		if program == p then
-			return terminal .. " -name " .. program .. " -e " .. cmd
-		end
-	end
-	return cmd
-end
 
 local previous_coords = {}
 function mouse_media_callback(pointer_coords)
@@ -158,7 +178,7 @@ local function run_once(cmd_arr)
 		awful.spawn.easy_async_with_shell(string.format("pgrep -u $USER -x '%s' > /dev/null", cmd[1]),
 			function(stdout, stderr, reason, exit_code)
 				if exit_code ~= 0 then
-					awful.spawn(parse_for_terminal_programs(cmd[1]), cmd[2])
+					awful.spawn(parse_for_special_run_commands(cmd[1]), cmd[2])
 				end
 			end
 		)
@@ -625,7 +645,7 @@ globalkeys = gears.table.join(
 				prompt = "Run: ",
 				hooks = {
 					{{}, "Return", function(cmd)
-						return parse_for_terminal_programs(cmd)
+						return parse_for_special_run_commands(cmd)
 					end}
 				},
 				textbox = awful.screen.focused().mypromptbox.widget,
@@ -1028,6 +1048,16 @@ awful.rules.rules = {
 			below = true,
 			sticky = true,
 			skip_taskbar = true
+		}
+	},
+	{
+		rule = { class = "URxvt", instance = "popup" },
+		properties = {
+			placement = awful.placement.top+awful.placement.center_horizontal,
+			above = true,
+			sticky = true,
+			skip_taskbar = true,
+			floating = true
 		}
 	},
 	{
