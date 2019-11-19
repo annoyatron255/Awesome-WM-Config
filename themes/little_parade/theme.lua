@@ -204,7 +204,7 @@ theme.mpd = lain.widget.mpd({
 		elseif mpd_now.title == "N/A" then
 			notification_text = mpd_now.file:match("^.+/(.+)%.")
 		else
-			notification_text = string.format("%s\n%s\n(%s) - %s", mpd_now.title,
+			notification_text = string.format("%s\n%s\n%s (%s)", mpd_now.title,
 				mpd_now.artist, mpd_now.album, mpd_now.date)
 		end
 
