@@ -438,22 +438,6 @@ globalkeys = gears.table.join(
 		{description = "quit awesome", group = "awesome"}
 	),
 
-	-- Layout
-	awful.key({ modkey }, "space",
-		function()
-			awful.layout.inc(1)
-			awful.screen.focused().mylayoutbox:set_visible(true)
-		end,
-		{description = "select next layout", group = "layout"}
-	),
-	awful.key({ modkey, "Control" }, "space",
-		function()
-			awful.layout.inc(-1)
-			awful.screen.focused().mylayoutbox:set_visible(true)
-		end,
-		{description = "select previous layout", group = "layout"}
-	),
-
 	awful.key({ modkey, "Control" }, "n",
 		function()
 			local c = awful.client.restore()
@@ -809,6 +793,21 @@ resizekeys = gears.table.join(
 			end
 		end,
 		{description = "reset size", group = "resize mode"}
+	),
+	-- Layout
+	awful.key({ }, "space",
+		function()
+			awful.layout.inc(1)
+			awful.screen.focused().mylayoutbox:set_visible(true)
+		end,
+		{description = "select next layout", group = "resize mode"}
+	),
+	awful.key({ "Control" }, "space",
+		function()
+			awful.layout.inc(-1)
+			awful.screen.focused().mylayoutbox:set_visible(true)
+		end,
+		{description = "select previous layout", group = "resize mode"}
 	)
 )
 
