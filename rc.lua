@@ -141,7 +141,9 @@ end
 -- Make awesome use last tag's rather than first tag's layout
 function awful.screen.object.get_selected_tag(s)
 	local tags = awful.screen.object.get_selected_tags(s)
-	if string.match(debug.getinfo(3, "S").source, "layout") then
+	local debug_source = debug.getinfo(3, "S").source
+	if string.match(debug_source, "client") or
+	   string.match(debug_source, "layout") then
 		return tags[#tags]
 	end
 	return tags[1]
