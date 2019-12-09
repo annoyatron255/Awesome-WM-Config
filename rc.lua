@@ -51,8 +51,6 @@ local terminal = "urxvtc" -- Other terminals not tested or recommended and will 
 local editor = os.getenv("EDITOR") or "vim"
 local chosen_theme = "little_parade"
 
-
-
 local theme_path = string.format("%s/.config/awesome/themes/%s/theme.lua", os.getenv("HOME"), chosen_theme)
 beautiful.init(theme_path)
 beautiful.theme_assets.recolor_layout(beautiful, beautiful.accent_color)
@@ -78,7 +76,7 @@ local function terminal_program(cmd)
 end
 
 local function popup_program(cmd)
-	return terminal .. " -name popup -geometry 160x20 -e zsh -c \"source ~/.zshrc && " .. cmd .. "\""
+	return terminal .. " -name popup -geometry 160x20 -e zsh -c \"source $HOME/.zshrc && " .. cmd .. "\""
 end
 
 local function popup_when_no_args(cmd)
@@ -95,7 +93,8 @@ local special_run_commands = {
 	{"htop", terminal_program},
 	{"top", terminal_program},
 	{"man", terminal_program},
-	{"m", popup_when_no_args}
+	{"m", popup_when_no_args},
+	{"o", popup_when_no_args}
 }
 
 local function parse_for_special_run_commands(in_cmd)
@@ -307,7 +306,6 @@ awful.util.tasklist_buttons = gears.table.join(
 	end)
 )
 
-
 -- {{{ Screen
 -- Re-set wallpaper on screen geometry changes such as resolution
 screen.connect_signal("property::geometry", function(s) beautiful.set_wallpaper(s) end)
@@ -447,9 +445,9 @@ globalkeys = gears.table.join(
 			if client.focus then
 				local term_id = "/tmp/urxvtc_ids/" .. client.focus.window
 				awful.spawn.with_shell(terminal ..
-					" -cd $([ -f " .. term_id .. " ] && \
+					" -cd \"$([ -f " .. term_id .. " ] && \
 					readlink -e /proc/$(cat " .. term_id .. ")/cwd || \
-					echo $HOME)"
+					echo $HOME)\""
 				)
 			else
 				awful.spawn(terminal)
@@ -1129,7 +1127,7 @@ local function border_adjust(c)
 	elseif c.x - s.workarea["x"] + c.width - s.workarea["width"] + beautiful.titlebar_size + 10 >= 0 then
 		titlebar_position = "right"
 	else
-		titlebar_position = "top"
+		titlebar_position = "bottom"
 	end
 
 	if #focusable(awful.screen.focused().clients) > 1 and not c.maximized then
