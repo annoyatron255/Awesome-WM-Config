@@ -184,17 +184,21 @@ function theme.mpd_random_toggle()
 	theme.mpd.update()
 end
 
-
-
 theme.mpd = lain.widget.mpd({
 	followtag = true,
 	settings = function()
 		local state
 		local notification_text
 		if mpd_now.state == "play" then
-			state = "   " .. utf8.char(0xf04b) .. " "
-		elseif mpd_now.state == "pause" then
 			state = "   " .. utf8.char(0xf04c) .. " "
+			theme.music_titlebar_widget:get_children_by_id("play_pause_icon")[1]:set_markup(
+				markup(theme.muted_color, utf8.char(0xf03e4) .. " ")
+			)
+		elseif mpd_now.state == "pause" then
+			state = "   " .. utf8.char(0xf04b) .. " "
+			theme.music_titlebar_widget:get_children_by_id("play_pause_icon")[1]:set_markup(
+				markup(theme.muted_color, utf8.char(0xf040a) .. " ")
+			)
 		else
 			state = ""
 		end
@@ -214,6 +218,46 @@ theme.mpd = lain.widget.mpd({
 			timeout = 6,
 			text = notification_text
 		}
+
+		-- Music titlebar
+		local title_text
+		if mpd_now.name ~= "N/A" then
+			title_text = mpd_now.name
+		elseif mpd_now.title == "N/A" then
+			title_text = mpd_now.file:match("^.+/(.+)%.")
+		else
+			title_text = mpd_now.title
+		end
+
+		theme.music_titlebar_widget:get_children_by_id("track_line")[1]:set_markup(
+			markup(theme.normal_color, title_text)
+		)
+		theme.music_titlebar_widget:get_children_by_id("track_subline")[1]:set_markup(
+			markup(theme.muted_color,
+				string.format("%s — %s (%s)", mpd_now.artist, mpd_now.album, mpd_now.date)
+			)
+		)
+
+		-- Random icon colors
+		local random_icon = theme.music_titlebar_widget:get_children_by_id("random_icon")[1]
+		if mpd_now.random_mode then
+			random_icon:set_markup(markup(theme.accent_color, random_icon.text))
+		else
+			random_icon:set_markup(markup(theme.muted_color, random_icon.text))
+		end
+
+		-- Repeat icon shape and colors
+		local single_icon = theme.music_titlebar_widget:get_children_by_id("single_icon")[1]
+		local repeat_icon = theme.music_titlebar_widget:get_children_by_id("repeat_icon")[1]
+		single_icon:set_visible(mpd_now.single_mode)
+
+		if mpd_now.repeat_mode then
+			single_icon:set_markup(markup(theme.accent_color, single_icon.text))
+			repeat_icon:set_markup(markup(theme.accent_color, repeat_icon.text))
+		else
+			single_icon:set_markup(markup(theme.muted_color, single_icon.text))
+			repeat_icon:set_markup(markup(theme.muted_color, repeat_icon.text))
+		end
 	end,
 })
 
@@ -227,13 +271,179 @@ theme.mpd.widget:buttons(gears.table.join(
 	awful.button({ }, 3, function()
 		theme.mpd_repeat_cycle()
 	end),
-	awful.button({ }, 4, function()
+	awful.button({ }, 5, function()
 		theme.mpd_next()
 	end),
-	awful.button({ }, 5, function()
+	awful.button({ }, 4, function()
 		theme.mpd_prev()
 	end)
 ))
+
+-- ncmpcpp custom titlebar
+function theme.create_music_titlebar(c)
+	if theme.music_titlebar_widget == nil then
+		local left_icons_font = "Material Design Icons 19"
+		theme.music_titlebar_widget = wibox.widget {
+			{ -- Left icon grid
+				{ -- Current playlist
+					align = "center",
+					font = left_icons_font,
+					markup = markup(theme.muted_color, " " .. utf8.char(0xf0cb8) .. " "),
+					buttons = awful.button({ }, 1, function()
+						awful.spawn("xdotool key --window "..tostring(client.focus.window).." 1")
+					end),
+					widget = wibox.widget.textbox
+				},
+				{ -- File browser
+					align = "center",
+					font = left_icons_font,
+					markup = markup(theme.muted_color, utf8.char(0xf1359) .. " "),
+					buttons = awful.button({ }, 1, function()
+						awful.spawn("xdotool key --window "..tostring(client.focus.window).." 2")
+					end),
+					widget = wibox.widget.textbox
+				},
+				{ -- Album browser
+					align = "center",
+					font = left_icons_font,
+					markup = markup(theme.muted_color, utf8.char(0xf0025) .. " "),
+					buttons = awful.button({ }, 1, function()
+						awful.spawn("xdotool key --window "..tostring(client.focus.window).." 4")
+					end),
+					widget = wibox.widget.textbox
+				},
+				{ -- Previous track
+					align = "center",
+					font = left_icons_font,
+					markup = markup(theme.muted_color, " " .. utf8.char(0xf04ae) .. " "),
+					buttons = awful.button({ }, 1, function()
+						theme.mpd_prev()
+					end),
+					widget = wibox.widget.textbox
+				},
+				{ -- Play/pause
+					align = "center",
+					font = left_icons_font,
+					markup = markup(theme.muted_color, utf8.char(0xf040a) .. " "),
+					id = "play_pause_icon",
+					buttons = awful.button({ }, 1, function()
+						theme.mpd_toggle()
+					end),
+					widget = wibox.widget.textbox
+				},
+				{ -- Next track
+					align = "center",
+					font = left_icons_font,
+					markup = markup(theme.muted_color, utf8.char(0xf04ad) .. " "),
+					buttons = awful.button({ }, 1, function()
+						theme.mpd_next()
+					end),
+					widget = wibox.widget.textbox
+				},
+				forced_num_cols = 3,
+				forced_num_rows = 2,
+				homogeneous = false,
+				layout = wibox.layout.grid
+			},
+			{ -- Center title/track info
+				{
+					--[[nil, -- Left side
+					{
+						{ -- Track title]]
+							align = "center",
+							font = "Fira Sans Bold 18",
+							id = "track_line",
+							widget = wibox.widget.textbox
+						--[[},
+						step_function = wibox.container.scroll.step_functions.linear_increase,
+						speed = 50,
+						extra_space = 100,
+						fps = 60,
+						layout = wibox.container.scroll.horizontal
+					},
+					expand = "outside",
+					layout = wibox.layout.align.horizontal -- So text is centered when not scrolling]]
+				},
+				nil, -- Middle
+				{
+					--[[nil, -- Left side
+					{
+						{ -- Track info]]
+							align = "center",
+							font = theme.font,
+							id = "track_subline",
+							widget = wibox.widget.textbox
+						--[[},
+						step_function = wibox.container.scroll.step_functions.linear_increase,
+						speed = 50,
+						extra_space = 50,
+						fps = 60,
+						layout = wibox.container.scroll.horizontal
+					},
+					expand = "outside",
+					layout = wibox.layout.align.horizontal -- So text is centered when not scrolling]]
+				},
+				layout = wibox.layout.align.vertical
+			},
+			{ -- Right repeat/random icons
+				{
+					{
+						align = "center",
+						font = "FontAwesome 20",
+						text = " " .. utf8.char(0xf021) .. " ",
+						id = "repeat_icon",
+						buttons = awful.button({ }, 1, function()
+							theme.mpd_repeat_cycle()
+						end),
+						widget = wibox.widget.textbox
+					},
+					{
+						align = "center",
+						font = "Fira Sans Bold 9",
+						text = "1" .. utf8.char(0x2009),
+						id = "single_icon",
+						widget = wibox.widget.textbox
+					},
+					layout = wibox.layout.stack
+				},
+				{
+					align = "center",
+					font = "FontAwesome 20",
+					text = " " .. utf8.char(0xf074) .. "  ",
+					id = "random_icon",
+					buttons = awful.button({ }, 1, function()
+						theme.mpd_random_toggle()
+					end),
+					widget = wibox.widget.textbox
+				},
+				layout = wibox.layout.fixed.horizontal
+			},
+			layout = wibox.layout.align.horizontal,
+		}
+	end
+
+	awful.titlebar(c, {
+		size = 55,
+		position = "top",
+		bg = theme.base_color
+	}):setup {
+		{
+			theme.music_titlebar_widget,
+			layout = wibox.layout.stack
+		},
+		id = "active_margin",
+		color = theme.accent_color,
+		widget = wibox.container.margin
+	}
+
+	c:connect_signal("focus", function(c)
+		c._private.titlebars["top"].drawable:get_children_by_id("active_margin")[1]:set_color(theme.border_focus)
+	end)
+
+	c:connect_signal("unfocus", function(c)
+		c._private.titlebars["top"].drawable:get_children_by_id("active_margin")[1]:set_color(theme.border_normal)
+	end)
+end
 
 -- Visualizer
 -- terminal pretty much needs to be urxvt(c)
@@ -434,8 +644,8 @@ function theme.at_screen_connect(s)
 	s.mylayoutbox:buttons(gears.table.join(
 		awful.button({ }, 1, function() awful.layout.inc(1) end),
 		awful.button({ }, 3, function() awful.layout.inc(-1) end),
-		awful.button({ }, 4, function() awful.layout.inc(1) end),
-		awful.button({ }, 5, function() awful.layout.inc(-1) end)
+		awful.button({ }, 5, function() awful.layout.inc(1) end),
+		awful.button({ }, 4, function() awful.layout.inc(-1) end)
 	))
 	s.mylayoutbox:set_visible(false)
 

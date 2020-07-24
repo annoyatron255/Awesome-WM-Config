@@ -48,6 +48,24 @@ end
 local modkey = "Mod4"
 
 local terminal = "urxvtc" -- Other terminals not tested or recommended and will probably not work
+local compositor = [[picom --backend glx --force-win-blend --use-damage --glx-fshader-win '
+	uniform float opacity;
+	uniform bool invert_color;
+	uniform sampler2D tex;
+	void main() {
+		vec4 c = texture2D(tex, gl_TexCoord[0].xy);
+		if (!invert_color) { // Hack to allow picom exceptions
+			// Change the vec4 to your desired key color
+			vec4 vdiff = abs(vec4(0.0, 0.0039, 0.0, 1.0) - c); // #000100
+			float diff = max(max(max(vdiff.r, vdiff.g), vdiff.b), vdiff.a);
+			// Change the vec4 to your desired output color
+			if (diff < 0.001)
+				c = vec4(0.0, 0.0, 0.0, 0.890196); // #000000E3
+		}
+		c *= opacity;
+		gl_FragColor = c;
+	}'
+]]
 local editor = os.getenv("EDITOR") or "vim"
 local chosen_theme = "little_parade"
 
@@ -93,8 +111,14 @@ local special_run_commands = {
 	{"htop", terminal_program},
 	{"top", terminal_program},
 	{"man", terminal_program},
+	{"bash", terminal_program},
+	{"sh", terminal_program},
+	{"zsh", terminal_program},
 	{"m", popup_when_no_args},
-	{"o", popup_when_no_args}
+	{"o", popup_when_no_args},
+	{"t", popup_program},
+	{"tx", popup_program},
+	{"shaders", popup_when_no_args}
 }
 
 local function parse_for_special_run_commands(in_cmd)
@@ -176,6 +200,15 @@ function awful.screen.object.get_selected_tag(s)
 	return tags[1]
 end
 
+function no_picom_when_focused_setup(c)
+	c:connect_signal("focus", function(c)
+		awful.spawn("killall picom")
+	end)
+
+	c:connect_signal("unfocus", function(c)
+		awful.spawn(compositor)
+	end)
+end
 -- }}}
 
 -- {{{ Autostart
@@ -194,25 +227,7 @@ end
 
 run_once({
 	{"urxvtd"},
-	-- See https://github.com/annoyatron255/compton-shaders
-	{"compton --backend glx --force-win-blend --use-damage --glx-fshader-win '\
-		uniform float opacity;\
-		uniform bool invert_color;\
-		uniform sampler2D tex;\
-		void main() {\
-			vec4 c = texture2D(tex, gl_TexCoord[0].xy);\
-			if (!invert_color) { // Hack to allow compton exceptions\
-				// Change the vec4 to your desired key color\
-				vec4 vdiff = abs(vec4(0.0, 0.0039, 0.0, 1.0) - c); // #000100\
-				float diff = max(max(max(vdiff.r, vdiff.g), vdiff.b), vdiff.a);\
-				// Change the vec4 to your desired output color\
-				if (diff < 0.001)\
-					c = vec4(0.0, 0.0, 0.0, 0.890196); // #000000E3\
-			}\
-			c *= opacity;\
-			gl_FragColor = c;\
-		}'\
-	"};
+	{compositor};
 	{"easystroke"},
 	{"libinput-gestures"},
 	{"light-locker"},
@@ -272,8 +287,8 @@ awful.util.taglist_buttons = gears.table.join(
 			client.focus:toggle_tag(t)
 		end
 	end),
-	awful.button({ }, 4, function(t) awful.tag.viewnext(t.screen) end),
-	awful.button({ }, 5, function(t) awful.tag.viewprev(t.screen) end)
+	awful.button({ }, 5, function(t) awful.tag.viewnext(t.screen) end),
+	awful.button({ }, 4, function(t) awful.tag.viewprev(t.screen) end)
 )
 
 awful.util.tasklist_buttons = gears.table.join(
@@ -298,10 +313,10 @@ awful.util.tasklist_buttons = gears.table.join(
 		c:emit_signal("request::activate", "tasklist", {raise = true})
 
 	end),
-	awful.button({ }, 4, function()
+	awful.button({ }, 5, function()
 		awful.client.focus.byidx(1)
 	end),
-	awful.button({ }, 5, function()
+	awful.button({ }, 4, function()
 		awful.client.focus.byidx(-1)
 	end)
 )
@@ -319,8 +334,8 @@ end)
 -- {{{ Mouse bindings
 root.buttons(gears.table.join(
 	awful.button({ }, 3, function() awful.util.mymainmenu:toggle() end),
-	awful.button({ }, 4, awful.tag.viewnext),
-	awful.button({ }, 5, awful.tag.viewprev)
+	awful.button({ }, 5, awful.tag.viewnext),
+	awful.button({ }, 4, awful.tag.viewprev)
 ))
 -- }}}
 
@@ -337,6 +352,15 @@ globalkeys = gears.table.join(
 		end,
 		{description = "screenshot current screen", group = "awesome"}
 	),
+	awful.key({ modkey, "Shift" }, "p",
+		function()
+			local s_geo = mouse.screen.geometry
+			awful.spawn("import " .. os.getenv("HOME") ..
+				"/Pictures/ScreenShots/" ..
+				os.date("%Y-%m-%d@%H:%M:%S") .. ".png")
+		end,
+		{description = "screenshot selection", group = "awesome"}
+	),
 	awful.key({ modkey, "Control" }, "p",
 		function()
 			if record_pid then
@@ -349,7 +373,7 @@ globalkeys = gears.table.join(
 					s.geometry.width .. "x" .. s.geometry.height ..
 					" -framerate 60 -f x11grab -i :0.0+" ..
 					s.geometry.x .. "," .. s.geometry.y ..
-					" -c:v libx264 -crf 18 -preset ultrafast " ..
+					" -f pulse -ac 2 -i default -c:v libx264 -crf 18 -preset ultrafast " ..
 					os.getenv("HOME") .. "/Videos/ScreenRecord/" ..
 					os.date("%Y-%m-%d@%H:%M:%S") .. ".mp4")
 				beautiful.myrecordbox.markup = lain.util.markup.font(
@@ -908,15 +932,17 @@ clientkeys = gears.table.join(
 
 local tag_keys = {
 	"1", "2", "3", "4", "5", "6", "7", "8", "9",
-	"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
-	"XF86AudioMute", "XF86AudioLowerVolume", "XF86AudioRaiseVolume", "XF86AudioMicMute",
-	"XF86MonBrightnessDown", "XF86MonBrightnessUp", "XF86Display", "XF86WLAN",
-	"XF86Tools", "XF86Bluetooth", "XF86Launch1", "XF86Favorites"
+	{"F1",  "XF86AudioMute"},         {"F2",  "XF86AudioLowerVolume"},
+	{"F3",  "XF86AudioRaiseVolume"},  {"F4",  "XF86AudioMicMute"},
+	{"F5",  "XF86MonBrightnessDown"}, {"F6",  "XF86MonBrightnessUp"},
+	{"F7",  "XF86Display"},           {"F8",  "XF86WLAN"},
+	{"F9",  "XF86Tools"},             {"F10", "XF86Bluetooth"},
+	{"F11", "XF86Launch1"},           {"F12", "XF86Favorites"}
 }
 
 -- Bind all key numbers to tags
 for i, k in ipairs(tag_keys) do
-	-- Hack to only show tags 1 and 9 in the shortcut window
+	-- Hack to only show tags 1, 9, F1, and F12 in the shortcut window
 	local descr_view, descr_toggle, descr_move, descr_toggle_focus
 	if i == 1 or i == 9 or i == 10 or i == 21 then
 		descr_view = {description = "view tag", group = "tag"}
@@ -924,57 +950,69 @@ for i, k in ipairs(tag_keys) do
 		descr_move = {description = "move client to tag", group = "tag"}
 		descr_toggle_focus = {description = "toggle client tag", group = "tag"}
 	end
-	if i > 21 then -- Duplicate F1-F12 for Thinkpad's non-function locked keys
-		i = i - 12
+
+	local keys = {}
+	if type(k) == "table" then
+		keys = k
+	else
+		keys[1] = k
 	end
-	globalkeys = gears.table.join(globalkeys,
-		-- View tag only
-		awful.key({ modkey, "Shift" }, k,
-			function()
-				local screen = awful.screen.focused()
-				local tag = screen.tags[i]
-				if tag then
-					tag:view_only()
-				end
-			end,
-			descr_view
-		),
-		-- Toggle tag display
-		awful.key({ modkey }, k,
-			function()
-				local screen = awful.screen.focused()
-				local tag = screen.tags[i]
-				if tag then
-					awful.tag.viewtoggle(tag)
-				end
-			end,
-			descr_toggle
-		),
-		-- Move client to tag
-		awful.key({ modkey, "Control", "Shift" }, k,
-			function()
-				if client.focus then
-					local tag = client.focus.screen.tags[i]
+
+	for _, key in ipairs(keys) do
+		globalkeys = gears.table.join(globalkeys,
+			-- View tag only
+			awful.key({ modkey, "Shift" }, key,
+				function()
+					local screen = awful.screen.focused()
+					local tag = screen.tags[i]
 					if tag then
-						client.focus:move_to_tag(tag)
+						tag:view_only()
 					end
-				end
-			end,
-			descr_move
-		),
-		-- Toggle tag on focused client
-		awful.key({ modkey, "Control" }, k,
-			function()
-				if client.focus then
-					local tag = client.focus.screen.tags[i]
+				end,
+				descr_view
+			),
+			-- Toggle tag display
+			awful.key({ modkey }, key,
+				function()
+					local screen = awful.screen.focused()
+					local tag = screen.tags[i]
 					if tag then
-						client.focus:toggle_tag(tag)
+						awful.tag.viewtoggle(tag)
 					end
-				end
-			end,
-			descr_toggle_focus
+				end,
+				descr_toggle
+			),
+			-- Move client to tag
+			awful.key({ modkey, "Control", "Shift" }, key,
+				function()
+					if client.focus then
+						local tag = client.focus.screen.tags[i]
+						if tag then
+							client.focus:move_to_tag(tag)
+						end
+					end
+				end,
+				descr_move
+			),
+			-- Toggle tag on focused client
+			awful.key({ modkey, "Control" }, key,
+				function()
+					if client.focus then
+						local tag = client.focus.screen.tags[i]
+						if tag then
+							client.focus:toggle_tag(tag)
+						end
+					end
+				end,
+				descr_toggle_focus
+			)
 		)
-	)
+		-- Only show first in list for help
+		descr_view = nil
+		descr_toggle = nil
+		descr_move = nil
+		descr_toggle_focus = nil
+	end
 end
 
 ----awful.mouse.resize.add_leave_callback(awful.rules.apply, "mouse.move")
@@ -1044,7 +1082,8 @@ awful.rules.rules = {
 	},
 	{
 		rule = { class = "URxvt", instance = "ncmpcpp" },
-		properties = { tag = beautiful.tagnames[3] }
+		properties = { tag = beautiful.tagnames[3] },
+		callback = beautiful.create_music_titlebar
 	},
 	{
 		rule = { class = "URxvt", instance = "vis" },
@@ -1107,20 +1146,12 @@ awful.rules.rules = {
 -- }}}
 
 -- {{{ Helper functions
-local titlebar_position = "top"
-
-local function border_adjust(c)
-	if c.floating then
-		return
-	end
-	awful.titlebar.hide(c, "top")
-	awful.titlebar.hide(c, "bottom")
-	awful.titlebar.hide(c, "left")
-	awful.titlebar.hide(c, "right")
-
+function get_border_position(c)
 	local s = awful.screen.focused()
 
 	local titlebar_size = beautiful.titlebar_size
+
+	local titlebar_position = "top"
 
 	if c.x - s.workarea["x"] - beautiful.titlebar_size <= 0 then
 		titlebar_position = "left"
@@ -1130,10 +1161,38 @@ local function border_adjust(c)
 		titlebar_position = "bottom"
 	end
 
+	return titlebar_position
+end
+
+local function border_adjust(c)
+	if c.floating then
+		return
+	end
+
+	local border_position = get_border_position(c)
+
+	pcall(function()
+		local top_titlebar_margin = c._private.titlebars["top"].drawable:get_children_by_id("active_margin")[1]
+		top_titlebar_margin:set_left(0)
+		top_titlebar_margin:set_right(0)
+
+		if #focusable(awful.screen.focused().clients) > 1 and not c.maximized then
+			if border_position == "left" then
+				top_titlebar_margin:set_left(beautiful.titlebar_size)
+			elseif border_position == "right" then
+				top_titlebar_margin:set_right(beautiful.titlebar_size)
+			end
+		end
+	end)
+
+	awful.titlebar.hide(c, "bottom")
+	awful.titlebar.hide(c, "left")
+	awful.titlebar.hide(c, "right")
+
 	if #focusable(awful.screen.focused().clients) > 1 and not c.maximized then
 		awful.titlebar(c, {
-			size = titlebar_size,
-			position = titlebar_position
+			size = beautiful.titlebar_size,
+			position = border_position
 		})
 	end
 end
@@ -1178,8 +1237,7 @@ client.connect_signal("mouse::enter", function(c)
 	c:emit_signal("request::activate", "mouse_enter", {raise = false})
 end)
 
---client.connect_signal("property::position", border_adjust)
---client.connect_signal("property::shape_bounding", border_adjust)
+client.connect_signal("property::position", border_adjust)
 client.connect_signal("focus", border_adjust)
 
 client.connect_signal("focus", function(c)
