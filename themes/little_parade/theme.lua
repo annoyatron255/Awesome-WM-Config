@@ -326,9 +326,19 @@ function theme.create_music_titlebar(c)
 					font = left_icons_font,
 					markup = markup(theme.muted_color, utf8.char(0xf040a) .. " "),
 					id = "play_pause_icon",
-					buttons = awful.button({ }, 1, function()
-						theme.mpd_toggle()
-					end),
+					buttons = gears.table.join(
+						awful.button({ }, 1, function()
+							theme.mpd_toggle()
+						end),
+						awful.button({ }, 4, function()
+							awful.spawn("pactl set-sink-volume 0 +1%")
+							theme.volume.notify()
+						end),
+						awful.button({ }, 5, function()
+							awful.spawn("pactl set-sink-volume 0 -1%")
+							theme.volume.notify()
+						end)
+					),
 					widget = wibox.widget.textbox
 				},
 				{ -- Next track
