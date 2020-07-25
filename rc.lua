@@ -1134,6 +1134,10 @@ awful.rules.rules = {
 		properties = { tag = beautiful.tagnames[5] }
 	},
 	{
+		rule = { class = "Terraria.bin.x86_64" },
+		callback = no_picom_when_focused_setup
+	},
+	{
 		rule = { class = "WP-34s" },
 		properties = {
 			placement = awful.placement.right,
