@@ -1,7 +1,6 @@
 --[[
 	annoyatron255's main theme
-	awesome v4.2-489-g99fbe2ae
-	27 October 2018
+	awesome v4.3
 --]]
 
 local gears = require("gears")
@@ -139,19 +138,23 @@ function theme.mpd_prev()
 	theme.mpd.update()
 end
 
-function theme.mpd_repeat_cycle()
-	local repeat_mode
+local function mpd_repeat_cycle()
 	if mpd_now.repeat_mode and mpd_now.single_mode then
 		os.execute("mpc repeat off")
 		os.execute("mpc single off")
-		repeat_mode = "OFF"
+		return "OFF"
 	elseif mpd_now.repeat_mode and not mpd_now.single_mode then
 		os.execute("mpc single on")
-		repeat_mode = "SINGLE"
+		return "SINGLE"
 	else
 		os.execute("mpc repeat on")
-		repeat_mode = "ALL"
+		return "ALL"
 	end
+end
+
+function theme.mpd_repeat_cycle()
+	local repeat_mode = mpd_repeat_cycle()
+
 	local notification_text = "Repeat: " .. repeat_mode
 	if not theme.mpd.notification_repeat then
 		theme.mpd.notification_repeat = naughty.notify({
@@ -403,7 +406,8 @@ function theme.create_music_titlebar(c)
 						text = " " .. utf8.char(0xf021) .. " ",
 						id = "repeat_icon",
 						buttons = awful.button({ }, 1, function()
-							theme.mpd_repeat_cycle()
+							mpd_repeat_cycle()
+							theme.mpd.update()
 						end),
 						widget = wibox.widget.textbox
 					},
@@ -422,7 +426,8 @@ function theme.create_music_titlebar(c)
 					text = " " .. utf8.char(0xf074) .. "  ",
 					id = "random_icon",
 					buttons = awful.button({ }, 1, function()
-						theme.mpd_random_toggle()
+						os.execute("mpc random")
+						theme.mpd.update()
 					end),
 					widget = wibox.widget.textbox
 				},

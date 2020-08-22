@@ -1,7 +1,6 @@
 --[[
 	annoytron255's awesome config
-	awesome v4.2-489-g99fbe2ae
-	27 October 2018
+	awesome v4.3
 --]]
 
 -- {{{ Include libraries
@@ -118,7 +117,7 @@ local special_run_commands = {
 	{"o", popup_when_no_args},
 	{"t", popup_program},
 	{"tx", popup_program},
-	{"shaders", popup_when_no_args}
+	{"shader", popup_when_no_args}
 }
 
 local function parse_for_special_run_commands(in_cmd)
