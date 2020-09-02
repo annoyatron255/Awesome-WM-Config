@@ -748,12 +748,103 @@ globalkeys = gears.table.join(
 		end,
 		{description = "reverse cycle stack", group = "tag"}
 	),
+	awful.key({ modkey }, "space",
+		function()
+			local win_list = ""
+			local choice_file = "/run/user/1000/window_choice"
+
+			local searchable_windows = function(c)
+				return not awful.rules.matches(c, {
+					rule = { instance = "vis" }
+				})
+			end
+
+			for c in awful.client.iterate(searchable_windows) do
+				win_list = win_list .. c.window .. " " .. c.name
+				if c.class == "URxvt" then
+					win_list = win_list .. " — " .. c.instance
+				else
+					win_list = win_list .. " — " .. c.class
+				end
+				win_list = win_list .. "\n"
+			end
+			win_list = win_list:sub(1, -2) -- Remove trailing newline
+
+			local fzf_command = "echo '" .. win_list .. "' | fzf --with-nth=2.."
+
+			-- Don't source zshrc and don't use urxvtc
+			local popup_program = function(cmd)
+				return "urxvt -name popup -geometry 160x20 -e zsh -c \"" .. cmd .. "\""
+			end
+
+			awful.spawn.easy_async(popup_program(fzf_command .. " > " .. choice_file), function()
+				awful.spawn.easy_async("cat " .. choice_file, function(stdout)
+					local win_id = stdout:match("^([^ ]+)")
+					for c in awful.client.iterate(searchable_windows) do
+						if c.window == tonumber(win_id) then
+							c:jump_to(true)
+							break
+						end
+					end
+				end)
+			end)
+		end,
+		{description = "fzf client selector", group = "client"}
+	),
+	awful.key({ modkey, "Control" }, "space",
+		function()
+			local og_c = client.focus
+
+			local win_list = ""
+			local choice_file = "/run/user/1000/window_choice"
+
+			local current_stack = function(c)
+				return awful.widget.tasklist.filter.minimizedcurrenttags(c, c.screen)
+					and c:tags()[#c:tags()] == og_c:tags()[#og_c:tags()]
+			end
+
+			for c in awful.client.iterate(current_stack) do
+				win_list = win_list .. c.window .. " " .. c.name
+				if c.class == "URxvt" then
+					win_list = win_list .. " — " .. c.instance
+				else
+					win_list = win_list .. " — " .. c.class
+				end
+				win_list = win_list .. "\n"
+			end
+			win_list = win_list:sub(1, -2) -- Remove trailing newline
+
+			local fzf_command = "echo '" .. win_list .. "' | fzf --with-nth=2.."
+
+			-- Don't source zshrc and don't use urxvtc
+			local popup_program = function(cmd)
+				return "urxvt -name popup -geometry 160x20 -e zsh -c \"" .. cmd .. "\""
+			end
+
+			awful.spawn.easy_async(popup_program(fzf_command .. " > " .. choice_file), function()
+				awful.spawn.easy_async("cat " .. choice_file, function(stdout)
+					local win_id = stdout:match("^([^ ]+)")
+					for c in awful.client.iterate(current_stack) do
+						if c.window == tonumber(win_id) then
+							og_c.minimized = true
+							c.minimized = false
+							client.focus = c
+							c:raise()
+							break
+						end
+					end
+				end)
+			end)
+		end,
+		{description = "fzf stack selector", group = "client"}
+	),
+
 
 	-- Modes
 	awful.key({ modkey }, "z",
 		function()
 			root.keys(gears.table.join(globalkeys, modekeys, resizekeys))
-			beautiful.mymodebox.markup = lain.util.markup.font(beautiful.font, "-- RESIZE MODE --")
+			beautiful.mymodebox.markup = lain.util.markup.font(beautiful.font, "— RESIZE MODE —")
 		end,
 		{description = "resize mode", group = "modes"}
 	)
@@ -1153,8 +1244,6 @@ function get_border_position(c)
 		titlebar_position = "left"
 	elseif c.x - s.workarea["x"] + c.width - s.workarea["width"] + beautiful.titlebar_size + 10 >= 0 then
 		titlebar_position = "right"
-	else
-		titlebar_position = "bottom"
 	end
 
 	return titlebar_position
