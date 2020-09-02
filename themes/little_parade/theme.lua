@@ -117,37 +117,36 @@ theme.cal = lain.widget.cal({
 
 -- MPD
 function theme.mpd_toggle()
-	os.execute("mpc toggle")
-	theme.mpd.update()
-	theme.mpd.timer:start()
+	awful.spawn.easy_async("mpc toggle", function()
+		theme.mpd.update()
+		theme.mpd.timer:start()
+	end)
 end
 
 function theme.mpd_stop()
-	os.execute("mpc stop")
-	theme.mpd.update()
-	theme.mpd.timer:stop()
+	awful.spawn.easy_async("mpc stop", function()
+		theme.mpd.update()
+		theme.mpd.timer:stop()
+	end)
 end
 
 function theme.mpd_next()
-	os.execute("mpc next")
-	theme.mpd.update()
+	awful.spawn.easy_async("mpc next", theme.mpd.update)
 end
 
 function theme.mpd_prev()
-	os.execute("mpc prev")
-	theme.mpd.update()
+	awful.spawn.easy_async("mpc prev", theme.mpd.update)
 end
 
 local function mpd_repeat_cycle()
 	if mpd_now.repeat_mode and mpd_now.single_mode then
-		os.execute("mpc repeat off")
-		os.execute("mpc single off")
+		awful.spawn.easy_async_with_shell("mpc repeat off; mpc single off", theme.mpd.update)
 		return "OFF"
 	elseif mpd_now.repeat_mode and not mpd_now.single_mode then
-		os.execute("mpc single on")
+		awful.spawn.easy_async("mpc single on", theme.mpd.update)
 		return "SINGLE"
 	else
-		os.execute("mpc repeat on")
+		awful.spawn.easy_async("mpc repeat on", theme.mpd.update)
 		return "ALL"
 	end
 end
@@ -164,27 +163,27 @@ function theme.mpd_repeat_cycle()
 	else
 		naughty.replace_text(theme.mpd.notification_repeat, nil, notification_text)
 	end
-	theme.mpd.update()
 end
 
 function theme.mpd_random_toggle()
-	local random_mode
-	if mpd_now.random_mode then
-		random_mode = "OFF"
-	else
-		random_mode = "ON"
-	end
-	os.execute("mpc random")
-	local notification_text = "Random: " .. random_mode
-	if not theme.mpd.notification_random then
-		theme.mpd.notification_random = naughty.notify({
-			text = notification_text,
-			destory = function() theme.mpd.notification_random = nil end
-		})
-	else
-		naughty.replace_text(theme.mpd.notification_random, nil, notification_text)
-	end
-	theme.mpd.update()
+	awful.spawn.easy_async("mpc random", function()
+		local random_mode
+		if mpd_now.random_mode then
+			random_mode = "OFF"
+		else
+			random_mode = "ON"
+		end
+		local notification_text = "Random: " .. random_mode
+		if not theme.mpd.notification_random then
+			theme.mpd.notification_random = naughty.notify({
+				text = notification_text,
+				destory = function() theme.mpd.notification_random = nil end
+			})
+		else
+			naughty.replace_text(theme.mpd.notification_random, nil, notification_text)
+		end
+		theme.mpd.update()
+	end)
 end
 
 theme.mpd = lain.widget.mpd({
@@ -334,12 +333,12 @@ function theme.create_music_titlebar(c)
 							theme.mpd_toggle()
 						end),
 						awful.button({ }, 4, function()
-							awful.spawn("pactl set-sink-volume 0 +1%")
-							theme.volume.notify()
+							awful.spawn.easy_async("pactl set-sink-volume 0 +1%",
+								theme.volume.notify)
 						end),
 						awful.button({ }, 5, function()
-							awful.spawn("pactl set-sink-volume 0 -1%")
-							theme.volume.notify()
+							awful.spawn.easy_async("pactl set-sink-volume 0 -1%",
+								theme.volume.notify)
 						end)
 					),
 					widget = wibox.widget.textbox
@@ -407,7 +406,6 @@ function theme.create_music_titlebar(c)
 						id = "repeat_icon",
 						buttons = awful.button({ }, 1, function()
 							mpd_repeat_cycle()
-							theme.mpd.update()
 						end),
 						widget = wibox.widget.textbox
 					},
@@ -426,8 +424,7 @@ function theme.create_music_titlebar(c)
 					text = " " .. utf8.char(0xf074) .. "  ",
 					id = "random_icon",
 					buttons = awful.button({ }, 1, function()
-						os.execute("mpc random")
-						theme.mpd.update()
+						awful.spawn.easy_async("mpc random", theme.mpd.update)
 					end),
 					widget = wibox.widget.textbox
 				},

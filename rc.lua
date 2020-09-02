@@ -162,14 +162,14 @@ gears.timer {
 local previous_coords = {}
 function mouse_media_callback(pointer_coords)
 	if previous_coords.y - pointer_coords.y >= 5 then
-		os.execute(string.format("amixer -q set %s 1%%+", beautiful.volume.channel))
-		beautiful.volume.notify()
+		awful.spawn.easy_async(string.format("amixer -q set %s 1%%+",
+		                                     beautiful.volume.channel), beautiful.volume.notify)
 		mouse.coords {
 			y = previous_coords.y
 		}
 	elseif pointer_coords.y - previous_coords.y >= 5 then
-		os.execute(string.format("amixer -q set %s 1%%-", beautiful.volume.channel))
-		beautiful.volume.notify()
+		awful.spawn.easy_async(string.format("amixer -q set %s 1%%-",
+		                                     beautiful.volume.channel), beautiful.volume.notify)
 		mouse.coords {
 			y = previous_coords.y
 		}
@@ -214,7 +214,7 @@ end
 -- Accepts rules; however, the current release (4.2) applies rules in a weird order: rules won't work
 local function run_once(cmd_arr)
 	for _, cmd in ipairs(cmd_arr) do
-		awful.spawn.easy_async_with_shell(string.format("pgrep -u $USER -x '%s' > /dev/null", cmd[1]),
+		awful.spawn.easy_async_with_shell(string.format("pgrep -f -u $USER '%s' > /dev/null", cmd[1]),
 			function(stdout, stderr, reason, exit_code)
 				if exit_code ~= 0 then
 					awful.spawn(parse_for_special_run_commands(cmd[1]), cmd[2])
@@ -517,45 +517,41 @@ globalkeys = gears.table.join(
 	-- ALSA volume control
 	awful.key({ modkey }, "=",
 		function()
-			--os.execute(string.format("amixer -q set %s 1%%+", beautiful.volume.channel))
-			awful.spawn("pactl set-sink-volume 0 +1%")
-			beautiful.volume.notify()
+			awful.spawn.easy_async("pactl set-sink-volume 0 +1%", beautiful.volume.notify)
 		end,
 		{description = "increase ALSA volume", group = "media"}
 	),
 	awful.key({ modkey }, "-",
 		function()
-			--os.execute(string.format("amixer -q set %s 1%%-", beautiful.volume.channel))
-			awful.spawn("pactl set-sink-volume 0 -1%")
-			beautiful.volume.notify()
+			awful.spawn.easy_async("pactl set-sink-volume 0 -1%", beautiful.volume.notify)
 		end,
 		{description = "decrease ALSA volume", group = "media"}
 	),
 	awful.key({ modkey }, "0",
 		function()
-			os.execute(string.format("amixer -q set %s toggle", beautiful.volume.togglechannel or beautiful.volume.channel))
-			beautiful.volume.notify()
+			awful.spawn.easy_async(
+				string.format("amixer -q set %s toggle",
+				              beautiful.volume.togglechannel or beautiful.volume.channel),
+				beautiful.volume.notify)
 		end,
 		{description = "toggle ALSA volume", group = "media"}
 	),
 	awful.key({ }, "XF86AudioRaiseVolume",
 		function()
-			--os.execute(string.format("amixer -q set %s 1%%+", beautiful.volume.channel))
-			awful.spawn("pactl set-sink-volume 0 +1%")
-			beautiful.volume.notify()
+			awful.spawn.easy_async("pactl set-sink-volume 0 +1%", beautiful.volume.notify)
 		end
 	),
 	awful.key({ }, "XF86AudioLowerVolume",
 		function()
-			--os.execute(string.format("amixer -q set %s 1%%-", beautiful.volume.channel))
-			awful.spawn("pactl set-sink-volume 0 -1%")
-			beautiful.volume.notify()
+			awful.spawn.easy_async("pactl set-sink-volume 0 -1%", beautiful.volume.notify)
 		end
 	),
 	awful.key({ }, "XF86AudioMute",
 		function()
-			os.execute(string.format("amixer -q set %s toggle", beautiful.volume.togglechannel or beautiful.volume.channel))
-			beautiful.volume.notify()
+			awful.spawn.easy_async(
+				string.format("amixer -q set %s toggle",
+				              beautiful.volume.togglechannel or beautiful.volume.channel),
+				beautiful.volume.notify)
 		end
 	),
 
@@ -627,16 +623,13 @@ globalkeys = gears.table.join(
 	-- Brightness
 	awful.key({ }, "XF86MonBrightnessUp",
 		function()
-			awful.spawn("xbacklight + 5")
-			beautiful.brightness.notify()
+			awful.spawn.easy_async("xbacklight + 5", beautiful.brightness.notify)
 		end
 	),
 
 	awful.key({ }, "XF86MonBrightnessDown",
-	--awful.key({ modkey, "Control" }, "-",
 		function()
-			awful.spawn("xbacklight - 5")
-			beautiful.brightness.notify()
+			awful.spawn.easy_async("xbacklight - 5", beautiful.brightness.notify)
 		end
 	),
 
