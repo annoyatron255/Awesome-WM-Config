@@ -759,8 +759,10 @@ globalkeys = gears.table.join(
 				})
 			end
 
+			local client_table = {}
 			for c in awful.client.iterate(searchable_windows) do
-				win_list = win_list .. c.window .. " " .. c.name
+				client_table[#client_table+1] = c
+				win_list = win_list .. #client_table .. " " .. c.name
 				if c.class == "URxvt" then
 					win_list = win_list .. " — " .. c.instance
 				else
@@ -778,13 +780,10 @@ globalkeys = gears.table.join(
 			end
 
 			awful.spawn.easy_async(popup_program(fzf_command .. " > " .. choice_file), function()
-				awful.spawn.easy_async("cat " .. choice_file, function(stdout)
-					local win_id = stdout:match("^([^ ]+)")
-					for c in awful.client.iterate(searchable_windows) do
-						if c.window == tonumber(win_id) then
-							c:jump_to(true)
-							break
-						end
+				awful.spawn.easy_async("cat " .. choice_file, function(stdout, stderr, reason, exit_code)
+					if exit_code == 0 then
+						local index = tonumber(stdout:match("^([^ ]+)"))
+						client_table[index]:jump_to(true)
 					end
 				end)
 			end)
@@ -803,8 +802,10 @@ globalkeys = gears.table.join(
 					and c:tags()[#c:tags()] == og_c:tags()[#og_c:tags()]
 			end
 
+			local client_table = {}
 			for c in awful.client.iterate(current_stack) do
-				win_list = win_list .. c.window .. " " .. c.name
+				client_table[#client_table+1] = c
+				win_list = win_list .. #client_table .. " " .. c.name
 				if c.class == "URxvt" then
 					win_list = win_list .. " — " .. c.instance
 				else
@@ -822,16 +823,14 @@ globalkeys = gears.table.join(
 			end
 
 			awful.spawn.easy_async(popup_program(fzf_command .. " > " .. choice_file), function()
-				awful.spawn.easy_async("cat " .. choice_file, function(stdout)
-					local win_id = stdout:match("^([^ ]+)")
-					for c in awful.client.iterate(current_stack) do
-						if c.window == tonumber(win_id) then
-							og_c.minimized = true
-							c.minimized = false
-							client.focus = c
-							c:raise()
-							break
-						end
+				awful.spawn.easy_async("cat " .. choice_file, function(stdout, stderr, reason, exit_code)
+					if exit_code == 0 then
+						local c = client_table[tonumber(stdout:match("^([^ ]+)"))]
+						og_c.minimized = true
+						c.minimized = false
+						c:swap(og_c)
+						client.focus = c
+						c:raise()
 					end
 				end)
 			end)
