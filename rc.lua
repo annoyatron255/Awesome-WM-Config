@@ -71,6 +71,10 @@ local chosen_theme = "little_parade"
 local theme_path = string.format("%s/.config/awesome/themes/%s/theme.lua", os.getenv("HOME"), chosen_theme)
 beautiful.init(theme_path)
 beautiful.theme_assets.recolor_layout(beautiful, beautiful.accent_color)
+--beautiful.xresources.set_dpi(120, 1)
+--beautiful.xresources.set_dpi(73, 2)
+
+lockscreen = require("feign.lockscreen") -- Global for awesome-client
 
 hotkeys_popup_keys.tmux.add_rules_for_terminal({ rule = { name = "tmux"}})
 
@@ -229,7 +233,8 @@ run_once({
 	{compositor};
 	{"easystroke"},
 	{"libinput-gestures"},
-	{"light-locker"},
+	--{"light-locker"},
+	{"xss-lock /home/jack/.config/awesome/scripts/start_locker.sh"},
 	{"xmodmap ~/.Xmodmap"},
 	{"redshift"},
 	{"unclutter"},
@@ -383,7 +388,8 @@ globalkeys = gears.table.join(
 	),
 	awful.key({ modkey }, "x",
 		function()
-			awful.spawn("light-locker-command -l")
+			--awful.spawn("light-locker-command -l")
+			lockscreen.lockscreen()
 		end,
 		{description = "lock screen", group = "awesome"}
 	),
