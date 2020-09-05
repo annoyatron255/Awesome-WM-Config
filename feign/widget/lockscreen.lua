@@ -28,9 +28,19 @@ local function setup_lockscreen(s)
 				widget = wibox.widget.textbox
 			},
 			{
-				font = "Fira Sans " .. tostring(110 * s.geometry.height / 1440),
-				align = "center",
-				widget = wibox.widget.textclock("%H:%M")
+				{
+					font = "Fira Sans " .. tostring(110 * s.geometry.height / 1440),
+					align = "center",
+					valign = "bottom",
+					widget = wibox.widget.textclock("%H:%M")
+				},
+				{
+					font = "Fira Sans " .. tostring(24 * s.geometry.height / 1440),
+					align = "center",
+					valign = "top",
+					widget = wibox.widget.textclock("%A, %B %-d, %Y")
+				},
+				layout = wibox.layout.flex.vertical
 			},
 			id = "clock",
 			layout = wibox.layout.ratio.horizontal

@@ -4,12 +4,14 @@
 --]]
 
 local gears = require("gears")
-local lain = require("lain")
-local helpers = require("lain.helpers")
 local awful = require("awful")
 local wibox = require("wibox")
 local naughty = require("naughty")
-local awesome, client, os = awesome, client, os
+local keys = require("keys")
+local prefs = require("prefs")
+local feign = require("feign")
+local helpers = require("feign.helpers")
+local markup = require("feign.markup")
 
 local theme					= {}
 theme.dir					= os.getenv("HOME") .. "/.config/awesome/themes/little_parade"
@@ -85,527 +87,19 @@ theme.layout_fullscreen				= theme.dir .. "/icons/fullscreen.png"
 theme.layout_magnifier				= theme.dir .. "/icons/magnifier.png"
 theme.layout_floating				= theme.dir .. "/icons/floating.png"
 
-local markup = lain.util.markup
-
-theme.tagnames = { 
-	utf8.char(0xf269), -- Firefox
-	utf8.char(0xf120), -- Terminal
-	utf8.char(0xf001), -- Music
-	utf8.char(0xf0e0), -- Mail
-	utf8.char(0xf15b), -- Documents
-	utf8.char(0xf1b6), -- Steam
-	"7", "8", "9",
-	"F1", "F2", "F3", "F4", "F5", "F6",
-	"F7", "F8", "F9", "F10", "F11", "F12"
-}
-
 -- Textclock
 local mytextclock = wibox.widget.textclock(" %H:%M")
 mytextclock.font = theme.font
 
--- Calender
-theme.cal = lain.widget.cal({
-	attach_to = { mytextclock },
-	followtag = true,
-	week_start = 1,
-	notification_preset = {
-		font = theme.mono_font,
-		fg = theme.normal_color,
-		bg = theme.base_color
-	}
-})
-
--- MPD
-function theme.mpd_toggle()
-	awful.spawn.easy_async("mpc toggle", function()
-		theme.mpd.update()
-		theme.mpd.timer:start()
-	end)
-end
-
-function theme.mpd_stop()
-	awful.spawn.easy_async("mpc stop", function()
-		theme.mpd.update()
-		theme.mpd.timer:stop()
-	end)
-end
-
-function theme.mpd_next()
-	awful.spawn.easy_async("mpc next", theme.mpd.update)
-end
-
-function theme.mpd_prev()
-	awful.spawn.easy_async("mpc prev", theme.mpd.update)
-end
-
-local function mpd_repeat_cycle()
-	if mpd_now.repeat_mode and mpd_now.single_mode then
-		awful.spawn.easy_async_with_shell("mpc repeat off; mpc single off", theme.mpd.update)
-		return "OFF"
-	elseif mpd_now.repeat_mode and not mpd_now.single_mode then
-		awful.spawn.easy_async("mpc single on", theme.mpd.update)
-		return "SINGLE"
-	else
-		awful.spawn.easy_async("mpc repeat on", theme.mpd.update)
-		return "ALL"
-	end
-end
-
-function theme.mpd_repeat_cycle()
-	local repeat_mode = mpd_repeat_cycle()
-
-	local notification_text = "Repeat: " .. repeat_mode
-	if not theme.mpd.notification_repeat then
-		theme.mpd.notification_repeat = naughty.notify({
-			text = notification_text,
-			destroy = function() theme.mpd.notification_repeat = nil end
-		})
-	else
-		naughty.replace_text(theme.mpd.notification_repeat, nil, notification_text)
-	end
-end
-
-function theme.mpd_random_toggle()
-	awful.spawn.easy_async("mpc random", function()
-		local random_mode
-		if mpd_now.random_mode then
-			random_mode = "OFF"
-		else
-			random_mode = "ON"
-		end
-		local notification_text = "Random: " .. random_mode
-		if not theme.mpd.notification_random then
-			theme.mpd.notification_random = naughty.notify({
-				text = notification_text,
-				destory = function() theme.mpd.notification_random = nil end
-			})
-		else
-			naughty.replace_text(theme.mpd.notification_random, nil, notification_text)
-		end
-		theme.mpd.update()
-	end)
-end
-
-theme.mpd = lain.widget.mpd({
-	followtag = true,
-	settings = function()
-		local state
-		local notification_text
-		if mpd_now.state == "play" then
-			state = "   " .. utf8.char(0xf04c) .. " "
-			theme.music_titlebar_widget:get_children_by_id("play_pause_icon")[1]:set_markup(
-				markup(theme.muted_color, utf8.char(0xf03e4) .. " ")
-			)
-		elseif mpd_now.state == "pause" then
-			state = "   " .. utf8.char(0xf04b) .. " "
-			theme.music_titlebar_widget:get_children_by_id("play_pause_icon")[1]:set_markup(
-				markup(theme.muted_color, utf8.char(0xf040a) .. " ")
-			)
-		else
-			state = ""
-		end
-
-		if mpd_now.name ~= "N/A" then
-			notification_text = mpd_now.name
-		elseif mpd_now.title == "N/A" then
-			notification_text = mpd_now.file:match("^.+/(.+)%.")
-		else
-			notification_text = string.format("%s\n%s\n%s (%s)", mpd_now.title,
-				mpd_now.artist, mpd_now.album, mpd_now.date)
-		end
-
-		widget:set_markup(markup.font(theme.mpd_font, markup(theme.normal_color, state)))
-		mpd_notification_preset = {
-			title = "Now playing",
-			timeout = 6,
-			text = notification_text
-		}
-
-		-- Music titlebar
-		local title_text
-		if mpd_now.name ~= "N/A" then
-			title_text = mpd_now.name
-		elseif mpd_now.title == "N/A" then
-			title_text = mpd_now.file:match("^.+/(.+)%.")
-		else
-			title_text = mpd_now.title
-		end
-
-		theme.music_titlebar_widget:get_children_by_id("track_line")[1]:set_markup(
-			markup(theme.normal_color, title_text)
-		)
-		theme.music_titlebar_widget:get_children_by_id("track_subline")[1]:set_markup(
-			markup(theme.muted_color,
-				string.format("%s — %s (%s)", mpd_now.artist, mpd_now.album, mpd_now.date)
-			)
-		)
-
-		-- Random icon colors
-		local random_icon = theme.music_titlebar_widget:get_children_by_id("random_icon")[1]
-		if mpd_now.random_mode then
-			random_icon:set_markup(markup(theme.accent_color, random_icon.text))
-		else
-			random_icon:set_markup(markup(theme.muted_color, random_icon.text))
-		end
-
-		-- Repeat icon shape and colors
-		local single_icon = theme.music_titlebar_widget:get_children_by_id("single_icon")[1]
-		local repeat_icon = theme.music_titlebar_widget:get_children_by_id("repeat_icon")[1]
-		single_icon:set_visible(mpd_now.single_mode)
-
-		if mpd_now.repeat_mode then
-			single_icon:set_markup(markup(theme.accent_color, single_icon.text))
-			repeat_icon:set_markup(markup(theme.accent_color, repeat_icon.text))
-		else
-			single_icon:set_markup(markup(theme.muted_color, single_icon.text))
-			repeat_icon:set_markup(markup(theme.muted_color, repeat_icon.text))
-		end
-	end,
-})
-
-theme.mpd.widget:buttons(gears.table.join(
-	awful.button({ }, 1, function()
-		theme.mpd_toggle()
-	end),
-	awful.button({ }, 2, function()
-		theme.mpd_random_toggle()
-	end),
-	awful.button({ }, 3, function()
-		theme.mpd_repeat_cycle()
-	end),
-	awful.button({ }, 5, function()
-		theme.mpd_next()
-	end),
-	awful.button({ }, 4, function()
-		theme.mpd_prev()
-	end)
-))
-
--- ncmpcpp custom titlebar
-function theme.create_music_titlebar(c)
-	if theme.music_titlebar_widget == nil then
-		local left_icons_font = "Material Design Icons 19"
-		theme.music_titlebar_widget = wibox.widget {
-			{ -- Left icon grid
-				{ -- Current playlist
-					align = "center",
-					font = left_icons_font,
-					markup = markup(theme.muted_color, " " .. utf8.char(0xf0cb8) .. " "),
-					buttons = awful.button({ }, 1, function()
-						awful.spawn("xdotool key --window "..tostring(client.focus.window).." 1")
-					end),
-					widget = wibox.widget.textbox
-				},
-				{ -- File browser
-					align = "center",
-					font = left_icons_font,
-					markup = markup(theme.muted_color, utf8.char(0xf1359) .. " "),
-					buttons = awful.button({ }, 1, function()
-						awful.spawn("xdotool key --window "..tostring(client.focus.window).." 2")
-					end),
-					widget = wibox.widget.textbox
-				},
-				{ -- Album browser
-					align = "center",
-					font = left_icons_font,
-					markup = markup(theme.muted_color, utf8.char(0xf0025) .. " "),
-					buttons = awful.button({ }, 1, function()
-						awful.spawn("xdotool key --window "..tostring(client.focus.window).." 4")
-					end),
-					widget = wibox.widget.textbox
-				},
-				{ -- Previous track
-					align = "center",
-					font = left_icons_font,
-					markup = markup(theme.muted_color, " " .. utf8.char(0xf04ae) .. " "),
-					buttons = awful.button({ }, 1, function()
-						theme.mpd_prev()
-					end),
-					widget = wibox.widget.textbox
-				},
-				{ -- Play/pause
-					align = "center",
-					font = left_icons_font,
-					markup = markup(theme.muted_color, utf8.char(0xf040a) .. " "),
-					id = "play_pause_icon",
-					buttons = gears.table.join(
-						awful.button({ }, 1, function()
-							theme.mpd_toggle()
-						end),
-						awful.button({ }, 4, function()
-							awful.spawn.easy_async("pactl set-sink-volume 0 +1%",
-								theme.volume.notify)
-						end),
-						awful.button({ }, 5, function()
-							awful.spawn.easy_async("pactl set-sink-volume 0 -1%",
-								theme.volume.notify)
-						end)
-					),
-					widget = wibox.widget.textbox
-				},
-				{ -- Next track
-					align = "center",
-					font = left_icons_font,
-					markup = markup(theme.muted_color, utf8.char(0xf04ad) .. " "),
-					buttons = awful.button({ }, 1, function()
-						theme.mpd_next()
-					end),
-					widget = wibox.widget.textbox
-				},
-				forced_num_cols = 3,
-				forced_num_rows = 2,
-				homogeneous = false,
-				layout = wibox.layout.grid
-			},
-			{ -- Center title/track info
-				{
-					--[[nil, -- Left side
-					{
-						{ -- Track title]]
-							align = "center",
-							font = "Fira Sans Bold 18",
-							id = "track_line",
-							widget = wibox.widget.textbox
-						--[[},
-						step_function = wibox.container.scroll.step_functions.linear_increase,
-						speed = 50,
-						extra_space = 100,
-						fps = 60,
-						layout = wibox.container.scroll.horizontal
-					},
-					expand = "outside",
-					layout = wibox.layout.align.horizontal -- So text is centered when not scrolling]]
-				},
-				nil, -- Middle
-				{
-					--[[nil, -- Left side
-					{
-						{ -- Track info]]
-							align = "center",
-							font = theme.font,
-							id = "track_subline",
-							widget = wibox.widget.textbox
-						--[[},
-						step_function = wibox.container.scroll.step_functions.linear_increase,
-						speed = 50,
-						extra_space = 50,
-						fps = 60,
-						layout = wibox.container.scroll.horizontal
-					},
-					expand = "outside",
-					layout = wibox.layout.align.horizontal -- So text is centered when not scrolling]]
-				},
-				layout = wibox.layout.align.vertical
-			},
-			{ -- Right repeat/random icons
-				{
-					{
-						align = "center",
-						font = "FontAwesome 20",
-						text = " " .. utf8.char(0xf021) .. " ",
-						id = "repeat_icon",
-						buttons = awful.button({ }, 1, function()
-							mpd_repeat_cycle()
-						end),
-						widget = wibox.widget.textbox
-					},
-					{
-						align = "center",
-						font = "Fira Sans Bold 9",
-						text = "1" .. utf8.char(0x2009),
-						id = "single_icon",
-						widget = wibox.widget.textbox
-					},
-					layout = wibox.layout.stack
-				},
-				{
-					align = "center",
-					font = "FontAwesome 20",
-					text = " " .. utf8.char(0xf074) .. "  ",
-					id = "random_icon",
-					buttons = awful.button({ }, 1, function()
-						awful.spawn.easy_async("mpc random", theme.mpd.update)
-					end),
-					widget = wibox.widget.textbox
-				},
-				layout = wibox.layout.fixed.horizontal
-			},
-			layout = wibox.layout.align.horizontal,
-		}
-	end
-
-	awful.titlebar(c, {
-		size = 55,
-		position = "top",
-		bg = theme.base_color
-	}):setup {
-		{
-			theme.music_titlebar_widget,
-			layout = wibox.layout.stack
-		},
-		id = "active_margin",
-		color = theme.accent_color,
-		widget = wibox.container.margin
-	}
-
-	c:connect_signal("focus", function(c)
-		c._private.titlebars["top"].drawable:get_children_by_id("active_margin")[1]:set_color(theme.border_focus)
-	end)
-
-	c:connect_signal("unfocus", function(c)
-		c._private.titlebars["top"].drawable:get_children_by_id("active_margin")[1]:set_color(theme.border_normal)
-	end)
-end
-
--- Visualizer
--- terminal pretty much needs to be urxvt(c)
-function theme.spawn_visualizer(s, terminal)
-	awful.spawn(terminal .. "\
-		-font 'xft:Fira Mono:size=10'\
-		-scollBar false\
-		-sl 0\
-		-depth 32\
-		-bg rgba:0000/0000/0000/0000\
-		--highlightColor rgba:0000/0000/0000/0000\
-		-lineSpace 14\
-		-letterSpace 0\
-		-name vis\
-		-e sh -c 'export XDG_CONFIG_HOME=" .. theme.dir .. " && \
-		vis -c " .. theme.dir .. "/vis/config" .. s.index .. "'"
-	)
-end
-
---Battery
-local bat = lain.widget.bat({
-	settings = function()
-		local status
-		if bat_now.status == "Charging" or bat_now.ac_status == 1 then
-			status = "+"
-		else
-			status = "%"
-		end
-		widget:set_markup(markup(theme.normal_color, markup.font(theme.font, " " .. bat_now.perc .. status)))
-	end
-})
-
--- ALSA volume
-theme.volume = lain.widget.alsabar({
-	width = 200,
-	height = 25,
-	colors = {
-		background = theme.transparent,
-		mute = theme.muted_color,
-		unmute = theme.normal_color
-	},
-	notification_preset = {
-		font = theme.mono_font,
-		fg = theme.fg_normal
-	}
-})
-
-theme.volume.tooltip:remove_from_object(theme.volume.bar)
-
--- Volume bar notification
-function theme.volume.notify()
-	theme.volume.update(theme.volume.notify_callback)
-end
-
-function theme.volume.notify_callback()
-	local text
-	if volume_now.status == "on" then
-		text = " Volume - " .. volume_now.level .. "%"
-	else
-		text = " Volume - " .. volume_now.level .. "% [M]"
-	end
-
-	if not theme.volume.notification then
-		theme.volume.notification = naughty.notify({
-			text = text,
-			font = theme.mono_font,
-			height = 40,
-			width = 200,
-			destroy = function() theme.volume.notification = nil end
-		})
-		theme.volume.notification.box:setup {
-			layout = wibox.layout.fixed.vertical,
-			{
-				layout = wibox.layout.fixed.horizontal,
-				theme.volume.notification.textbox,
-			},
-			{
-				layout = wibox.layout.fixed.horizontal,
-				theme.volume.bar
-			}
-		}
-	else
-		naughty.replace_text(theme.volume.notification, nil, text)
-	end
-end
-
--- Brightness bar notification
-theme.brightness = {}
-
-theme.brightness.bar = wibox.widget {
-	color            = theme.normal_color,
-	background_color = theme.transparent,
-	forced_width     = 200,
-	forced_height    = 25,
-	margins          = 1,
-	paddings         = 1,
-	ticks            = false,
-	widget           = wibox.widget.progressbar
-}
-
-
-function theme.brightness.notify()
-	awful.spawn.easy_async_with_shell("xbacklight", function(cmd_out)
-		local val = math.floor(tonumber(cmd_out))
-
-		if not val then return end
-
-		if val ~= theme.brightness.brightness_now then
-			theme.brightness.brightness_now = val
-			theme.brightness.bar:set_value(theme.brightness.brightness_now / 100)
-
-			local text = " Brightness - " .. theme.brightness.brightness_now .. "%"
-
-			if not theme.brightness.notification then
-				theme.brightness.notification = naughty.notify({
-					text = text,
-					font = theme.mono_font,
-					width = 200,
-					height = 40,
-					destroy = function() theme.brightness.notification = nil end
-				})
-				theme.brightness.notification.box:setup {
-					layout = wibox.layout.fixed.vertical,
-					{
-						layout = wibox.layout.fixed.horizontal,
-						theme.brightness.notification.textbox
-					},
-					{
-						layout = wibox.layout.fixed.horizontal,
-						theme.brightness.bar
-					}
-				}
-			else
-				naughty.replace_text(theme.brightness.notification, nil, text)
-			end
-		end
-	end)
-end
-
--- Weather
-theme.weather = lain.widget.weather({
-	city_id = 5025219 -- Eden Prairie
-})
+-- Calendar
+feign.widget.calendar.attach(mytextclock)
 
 -- Eminent-like task filtering
 local orig_taglist_filter = awful.widget.taglist.filter.all
 
 -- Taglist label functions
 awful.widget.taglist.filter.all = function(t, args)
-	if t.selected or #focusable(t:clients()) > 0 then
+	if t.selected or #helpers.focusable(t:clients()) > 0 then
 		return orig_taglist_filter(t, args)
 	end
 end
@@ -646,7 +140,7 @@ function theme.at_screen_connect(s)
 	theme.set_wallpaper(s)
 
 	-- Tags
-	awful.tag(theme.tagnames, s, awful.layout.suit.tile)
+	awful.tag(prefs.tag_names, s, awful.layout.suit.tile)
 
 	-- Create a promptbox for each screen
 	s.mypromptbox = awful.widget.prompt()
@@ -665,7 +159,7 @@ function theme.at_screen_connect(s)
 	s.mytaglist = awful.widget.taglist(
 		s,
 		awful.widget.taglist.filter.all,
-		awful.util.taglist_buttons,
+		keys.taglist_buttons,
 		{font = theme.taglist_font}
 	)
 
@@ -673,7 +167,7 @@ function theme.at_screen_connect(s)
 	s.mytasklist = awful.widget.tasklist(
 		s,
 		awful.widget.tasklist.filter.currenttags,
-		awful.util.tasklist_buttons
+		keys.tasklist_buttons
 	)
 
 	-- Create the wibox
@@ -698,9 +192,9 @@ function theme.at_screen_connect(s)
 		{ -- Right widgets
 			layout = wibox.layout.fixed.horizontal,
 			mysystray,
-			theme.mpd.widget,
+			feign.widget.mpd.widget,
 			theme.myrecordbox,
-			bat.widget,
+			feign.widget.battery.widget,
 			mytextclock
 		}
 	}
