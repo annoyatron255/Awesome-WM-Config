@@ -132,6 +132,9 @@ local function get_creds()
 				if key == "BackSpace" and seq_len > 0 then
 					buffer = glib.utf8_substring(buffer, 0, seq_len - 1)
 					seq_len = seq_len - 1
+				elseif key == "Escape" then
+					buffer = ""
+					seq_len = 0
 				elseif glib.utf8_strlen(key, -1) == 1 then
 					buffer = buffer .. key
 					seq_len = seq_len + 1
