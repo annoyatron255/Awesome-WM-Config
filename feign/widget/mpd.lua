@@ -132,27 +132,52 @@ mpd.show_notification = function()
 		awful.spawn.easy_async_with_shell(cmd, function(stdout)
 			local album_art = stdout:gsub("\n", "")
 
-			if not mpd.notification then
-				mpd.notification = naughty.notify({
-					--title = "Now Playing",
-					--text = mpd.now.title,
-					--icon = album_art,
-					--icon_size = 100,
-					height = 100,
-					width = 500,
-					destroy = function() mpd.notification = nil end
-				})
-			end
+			local title_textbox = wibox.widget {
+				markup = markup.font("Fira Sans Bold 18", mpd.now.title),
+				valign = "center",
+				widget = wibox.widget.textbox
+			}
+			local artist_textbox = wibox.widget {
+				text = mpd.now.artist,
+				widget = wibox.widget.textbox
+			}
+			local album_textbox = wibox.widget {
+				text = mpd.now.album .. " (" .. mpd.now.date .. ")",
+				widget = wibox.widget.textbox
+			}
+			local w = math.max(
+				title_textbox:get_preferred_size(),
+				artist_textbox:get_preferred_size(),
+				album_textbox:get_preferred_size()
+			)
+
+			naughty.destroy(mpd.notification)
+			mpd.notification = naughty.notify({
+				height = 100,
+				width = 130 + w,
+				destroy = function() mpd.notification = nil end
+			})
 			mpd.notification.box:setup {
 				{
-					image = album_art,
-					widget = wibox.widget.imagebox
+					{
+						image = album_art,
+						widget = wibox.widget.imagebox
+					},
+					{
+						title_textbox,
+						nil,
+						{
+							artist_textbox,
+							album_textbox,
+							layout = wibox.layout.fixed.vertical
+						},
+						layout = wibox.layout.align.vertical
+					},
+					spacing = 10,
+					layout = wibox.layout.fixed.horizontal
 				},
-				{
-					text = mpd.now.title,
-					widget = wibox.widget.textbox
-				},
-				layout = wibox.layout.align.horizontal
+				margins = 5,
+				widget = wibox.container.margin
 			}
 		end)
 	end
