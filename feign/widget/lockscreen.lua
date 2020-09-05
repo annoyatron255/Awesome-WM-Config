@@ -45,6 +45,15 @@ local function setup_lockscreen(s)
 			id = "clock",
 			layout = wibox.layout.ratio.horizontal
 		},
+		{
+			{
+				widget = wibox.widget.textbox -- Dummy
+			},
+			margins = 0,
+			color = beautiful.accent_color,
+			id = "margin_border",
+			layout = wibox.container.margin
+		},
 		layout = wibox.layout.stack
 	}
 	s.lockscreen_box:get_children_by_id("clock")[1]:set_ratio(2, 0.425)
@@ -59,6 +68,7 @@ end
 
 local function show_lockscreen()
 	for s in screen do
+		s.lockscreen_box:get_children_by_id("margin_border")[1].margins = 0
 		s.lockscreen_box.visible = true
 	end
 end
@@ -66,6 +76,41 @@ end
 local function hide_lockscreen()
 	for s in screen do
 		s.lockscreen_box.visible = false
+	end
+end
+
+local function update_border(seq_len)
+	local stage = (seq_len % 5)
+	local thickness = 5
+
+	for s in screen do
+		local margin = s.lockscreen_box:get_children_by_id("margin_border")[1]
+		if stage == 0 then
+			margin.left = 0
+			margin.right = 0
+			margin.top= 0
+			margin.bottom = 0
+		elseif stage == 1 then
+			margin.left = 0
+			margin.right = 0
+			margin.top= 0
+			margin.bottom = thickness
+		elseif stage == 2 then
+			margin.left = thickness
+			margin.right = 0
+			margin.top= 0
+			margin.bottom = thickness
+		elseif stage == 3 then
+			margin.left = thickness
+			margin.right = 0
+			margin.top= thickness
+			margin.bottom = thickness
+		elseif stage == 4 then
+			margin.left = thickness
+			margin.right = thickness
+			margin.top= thickness
+			margin.bottom = thickness
+		end
 	end
 end
 
@@ -86,9 +131,13 @@ local function get_creds()
 
 				if key == "BackSpace" and seq_len > 0 then
 					buffer = glib.utf8_substring(buffer, 0, seq_len - 1)
+					seq_len = seq_len - 1
 				elseif glib.utf8_strlen(key, -1) == 1 then
 					buffer = buffer .. key
+					seq_len = seq_len + 1
 				end
+
+				update_border(seq_len)
 			end,
 			stop_key = "Return",
 			stop_callback = function()
