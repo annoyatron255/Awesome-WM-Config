@@ -116,7 +116,7 @@ end
 
 local function get_creds()
 	if not mousegrabber.isrunning() then
-		mousegrabber.run(function() return true end, "cursor")
+		mousegrabber.run(function() return true end, "arrow")
 	end
 
 	local lockscreen_enabled = true
