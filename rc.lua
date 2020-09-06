@@ -15,7 +15,6 @@ local awful = require("awful")
 require("awful.autofocus")
 local wibox = require("wibox")
 local naughty = require("naughty")
-local freedesktop = require("freedesktop")
 local keys = require("keys")
 local helpers = require("feign.helpers")
 lockscreen = require("feign.widget.lockscreen") -- Global for awesome-client
@@ -88,26 +87,6 @@ helpers.run_once({
 	{"firefox"},
 	{"ncmpcpp"},
 	{"thunderbird"},
-})
--- }}}
-
--- {{{ Menu
-local myawesomemenu = {
-	{ "hotkeys",     function() return false, hotkeys_popup.show_help end },
-	{ "manual",      prefs.terminal .. " -e man awesome" },
-	{ "edit config", string.format("%s -e %s %s", prefs.terminal, prefs.editor, awesome.conffile) },
-	{ "restart",     awesome.restart },
-	{ "quit",        awesome.quit }
-}
-
-awful.util.mymainmenu = freedesktop.menu.build({
-	icon_size = beautiful.menu_height or 16,
-	before = {
-		{ "Awesome", myawesomemenu, beautiful.awesome_icon }
-	},
-	after = {
-		{ "Open terminal", prefs.terminal }
-	}
 })
 -- }}}
 

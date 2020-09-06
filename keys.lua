@@ -78,8 +78,7 @@ keys.global_keys = gears.table.join(
 	),
 	awful.key({ modkey }, "a",
 		function()
-			--awful.util.mymainmenu:show()
-			feign.widget.calendar.show()
+			feign.widget.main_menu:show()
 		end,
 		{description = "show main menu", group = "awesome"}
 	),
@@ -836,7 +835,7 @@ keys.titlebar_buttons =  gears.table.join(
 
 -- Root window mouse buttons
 keys.root_buttons = gears.table.join(
-	awful.button({ }, 3, function() awful.util.mymainmenu:toggle() end),
+	awful.button({ }, 3, function() feign.widget.main_menu:toggle() end),
 	awful.button({ }, 5, awful.tag.viewnext),
 	awful.button({ }, 4, awful.tag.viewprev)
 )
