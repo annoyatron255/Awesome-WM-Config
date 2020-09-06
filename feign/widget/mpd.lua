@@ -160,21 +160,26 @@ mpd.show_notification = function()
 			mpd.notification.box:setup {
 				{
 					{
+						{
+							title_textbox,
+							nil,
+							{
+								artist_textbox,
+								album_textbox,
+								layout = wibox.layout.fixed.vertical
+							},
+							layout = wibox.layout.align.vertical
+						},
+						top = 3,
+						bottom = 3,
+						widget = wibox.container.margin
+					},
+					nil,
+					{
 						image = album_art,
 						widget = wibox.widget.imagebox
 					},
-					{
-						title_textbox,
-						nil,
-						{
-							artist_textbox,
-							album_textbox,
-							layout = wibox.layout.fixed.vertical
-						},
-						layout = wibox.layout.align.vertical
-					},
-					spacing = 10,
-					layout = wibox.layout.fixed.horizontal
+					layout = wibox.layout.align.horizontal
 				},
 				margins = 5,
 				widget = wibox.container.margin
