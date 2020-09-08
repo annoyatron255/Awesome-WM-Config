@@ -7,7 +7,7 @@ local battery = {}
 
 battery.list = {}
 
-battery.timeout = 3
+battery.timeout = 60
 
 battery.widget = wibox.widget.textbox()
 battery.ac = false
