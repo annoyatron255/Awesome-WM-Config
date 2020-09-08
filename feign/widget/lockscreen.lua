@@ -161,7 +161,7 @@ local function get_creds()
 
 	local function fingerprint_loop()
 		awful.spawn.easy_async("fprintd-verify", function(stdout, stderr, reason, exit_code)
-			if exit_code ~= 0 then
+			if exit_code == 0 then
 				if stdout:match("verify%-match") then
 					lockscreen_enabled = false
 					keygrabber:stop()
