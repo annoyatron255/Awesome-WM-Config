@@ -4,6 +4,7 @@ local naughty = require("naughty")
 local glib = require("lgi").GLib
 local pam = require("liblua_pam")
 local beautiful = require("beautiful")
+local feign = require("feign")
 
 local lockscreen = {}
 
@@ -126,6 +127,26 @@ local function get_creds()
 		local buffer = ""
 		keygrabber = awful.keygrabber {
 			autostart = true,
+			keybindings = {
+				{{ }, "XF86AudioRaiseVolume", function()
+					feign.widget.volume.inc(1)
+				end},
+				{{ }, "XF86AudioLowerVolume", function()
+					feign.widget.volume.inc(-1)
+				end},
+				{{ }, "XF86AudioMute", function()
+					feign.widget.volume.toggle_mute()
+				end},
+				{{ }, "XF86AudioMicMute", function()
+					feign.widget.volume.toggle_mic_mute()
+				end},
+				{{ }, "XF86MonBrightnessUp", function()
+					feign.widget.brightness.inc(5)
+				end},
+				{{ }, "XF86MonBrightnessDown", function()
+					feign.widget.brightness.inc(-5)
+				end}
+			},
 			keypressed_callback = function(_, _, key, event)
 				local seq_len = glib.utf8_strlen(buffer, -1)
 
