@@ -222,6 +222,12 @@ keys.global_keys = gears.table.join(
 		end
 	),
 
+	awful.key({ }, "XF86AudioMicMute",
+		function()
+			feign.widget.volume.toggle_mic_mute()
+		end
+	),
+
 	-- MPD Control
 	awful.key({ modkey }, "]",
 		function()

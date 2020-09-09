@@ -76,4 +76,8 @@ volume.toggle_mute = function()
 	awful.spawn.easy_async("amixer -q set Master toggle", volume.notify)
 end
 
+volume.toggle_mic_mute = function()
+	awful.spawn("amixer set Capture toggle")
+end
+
 return volume
