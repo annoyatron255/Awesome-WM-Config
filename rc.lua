@@ -94,6 +94,10 @@ helpers.run_once({
 require("rules")
 -- }}}
 
+awful.ewmh.add_activate_filter(function(c)
+	if c.class == "zoom" then return false end
+end, "ewmh")
+
 -- {{{ Signals
 -- Re-set wallpaper on screen geometry changes such as resolution
 screen.connect_signal("property::geometry", function(s) beautiful.set_wallpaper(s) end)
