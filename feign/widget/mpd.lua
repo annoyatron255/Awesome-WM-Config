@@ -220,13 +220,13 @@ mpd.update = function()
 			for k, v in string.gmatch(line, "([%w]+):[%s](.*)$") do
 				if     k == "state"          then mpd.now.state        = v
 				elseif k == "file"           then mpd.now.file         = v
-				elseif k == "Name"           then mpd.now.name         = gears.string.xml_unescape(v)
-				elseif k == "Artist"         then mpd.now.artist       = gears.string.xml_unescape(v)
-				elseif k == "Title"          then mpd.now.title        = gears.string.xml_unescape(v)
-				elseif k == "Album"          then mpd.now.album        = gears.string.xml_unescape(v)
-				elseif k == "Genre"          then mpd.now.genre        = gears.string.xml_unescape(v)
-				elseif k == "Track"          then mpd.now.track        = gears.string.xml_unescape(v)
-				elseif k == "Date"           then mpd.now.date         = gears.string.xml_unescape(v)
+				elseif k == "Name"           then mpd.now.name         = gears.string.xml_escape(v)
+				elseif k == "Artist"         then mpd.now.artist       = gears.string.xml_escape(v)
+				elseif k == "Title"          then mpd.now.title        = gears.string.xml_escape(v)
+				elseif k == "Album"          then mpd.now.album        = gears.string.xml_escape(v)
+				elseif k == "Genre"          then mpd.now.genre        = gears.string.xml_escape(v)
+				elseif k == "Track"          then mpd.now.track        = gears.string.xml_escape(v)
+				elseif k == "Date"           then mpd.now.date         = gears.string.xml_escape(v)
 				elseif k == "Time"           then mpd.now.time         = v
 				elseif k == "elapsed"        then mpd.now.elapsed      = string.match(v, "%d+")
 				elseif k == "song"           then mpd.now.pls_pos      = v
