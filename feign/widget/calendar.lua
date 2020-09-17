@@ -124,8 +124,8 @@ calendar.show = function(timeout)
 		if event.start_date.wday == curr_date.wday and
 		   (curr_date.hour * 60 + curr_date.min) < (event.end_date.hour * 60 + event.end_date.min) then
 			event_summary = event.summary
-			event_time = event.start_date.hour .. ":" .. event.start_date.min
-			   .. "–" .. event.end_date.hour .. ":" .. event.end_date.min
+			event_time = event.start_date.hour .. ":" .. string.format("%02d", event.start_date.min)
+			   .. "–" .. event.end_date.hour .. ":" .. string.format("%02d", event.end_date.min)
 			break
 		end
 	end
