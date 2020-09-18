@@ -24,28 +24,7 @@ calendar.get_events = function()
 
 			calendar.events[index].start_date.wday = wday_conv[day]
 			calendar.events[index].end_date.wday = wday_conv[day]
-			--[[if day == "SU" then
-				calendar.events[index].start_date.wday = 1
-				calendar.events[index].end_date.wday = 1
-			elseif day == "MO" then
-				calendar.events[index].start_date.wday = 2
-				calendar.events[index].end_date.wday = 2
-			elseif day == "TU" then
-				calendar.events[index].start_date.wday = 3
-				calendar.events[index].end_date.wday = 3
-			elseif day == "WE" then
-				calendar.events[index].start_date.wday = 4
-				calendar.events[index].end_date.wday = 4
-			elseif day == "TH" then
-				calendar.events[index].start_date.wday = 5
-				calendar.events[index].end_date.wday = 5
-			elseif day == "FR" then
-				calendar.events[index].start_date.wday = 6
-				calendar.events[index].end_date.wday = 6
-			elseif day == "SA" then
-				calendar.events[index].start_date.wday = 7
-				calendar.events[index].end_date.wday = 7
-			end--]]
+
 			index = index + 1
 		end
 
@@ -64,7 +43,7 @@ calendar.get_events = function()
 		end
 
 		index  = 1
-		for summary in string.gmatch(stdout, "SUMMARY:([^\n]+)") do
+		for summary in string.gmatch(stdout, "SUMMARY:([^\r\n]+)") do
 			calendar.events[index].summary = summary
 			index = index + 1
 		end
@@ -72,7 +51,8 @@ calendar.get_events = function()
 		table.sort(calendar.events, function(k1, k2)
 			if k1.start_date.hour < k2.start_date.hour then
 				return true
-			elseif (k1.start_date.hour == k2.start_date.hour) and (k1.start_date.min < k2.start_date.min) then
+			elseif (k1.start_date.hour == k2.start_date.hour) and
+			       (k1.start_date.min < k2.start_date.min) then
 				return true
 			else
 				return false
@@ -107,8 +87,8 @@ calendar.show = function(timeout)
 
 	if not calendar.notification then
 		calendar.notification = naughty.notify {
-			width = 300,
-			height = 290,
+			width = 600,
+			height = 270,
 			timeout = timeout,
 			destroy = function()
 				calendar.notification = nil
@@ -117,21 +97,49 @@ calendar.show = function(timeout)
 		}
 	end
 
-	local event_summary = "No Pending Events"
-	local event_time = ""
+	local event_widget_list = {layout = wibox.layout.fixed.vertical, spacing = 5}
 	local curr_date = os.date("*t")
 	for _, event in ipairs(calendar.events) do
-		if event.start_date.wday == curr_date.wday and
-		   (curr_date.hour * 60 + curr_date.min) < (event.end_date.hour * 60 + event.end_date.min) then
-			event_summary = event.summary
-			event_time = event.start_date.hour .. ":" .. string.format("%02d", event.start_date.min)
+		if event.start_date.wday == curr_date.wday then
+			local color = beautiful.normal_color
+			if (curr_date.hour * 60 + curr_date.min) > (event.end_date.hour * 60 + event.end_date.min) then
+				color = beautiful.muted_color
+			elseif (curr_date.hour * 60 + curr_date.min) <
+			       (event.end_date.hour * 60 + event.end_date.min) and
+			       (curr_date.hour * 60 + curr_date.min) >
+			       (event.start_date.hour * 60 + event.start_date.min) then
+				color = beautiful.accent_color
+			end
+
+			local event_summary = event.summary
+			local event_time = event.start_date.hour .. ":" .. string.format("%02d", event.start_date.min)
 			   .. "–" .. event.end_date.hour .. ":" .. string.format("%02d", event.end_date.min)
-			break
+			table.insert(event_widget_list, wibox.widget {
+				{
+					markup = markup(color, markup.font("Fira Sans 11", event_summary)),
+					widget = wibox.widget.textbox
+				},
+				nil,
+				{
+					markup = markup(color, markup.font("Fira Sans 11", event_time)),
+					widget = wibox.widget.textbox
+				},
+				layout = wibox.layout.align.horizontal
+			})
 		end
 	end
 
 	calendar.notification.box:setup {
 		{
+			{
+				{
+					markup = markup.font("Fira Sans 13", "Today's Agenda"),
+					widget = wibox.widget.textbox
+				},
+				event_widget_list,
+				spacing = 9,
+				layout = wibox.layout.fixed.vertical
+			},
 			{
 				date = calendar.get_date_with_offset(),
 				font = beautiful.mono_font,
@@ -140,7 +148,8 @@ calendar.show = function(timeout)
 				widget = wibox.widget.calendar.month,
 				fn_embed = function(widget, flag, date)
 					if flag == "focus" and calendar.offset == 0 then
-						widget:set_markup(markup.bold(markup(beautiful.accent_color, widget:get_text())))
+						widget:set_markup(markup.bold(
+						                  markup(beautiful.accent_color, widget:get_text())))
 					elseif flag == "focus" and calendar.offset ~= 0 then
 						widget:set_markup(markup(beautiful.normal_color, widget:get_text()))
 					elseif flag == "weekday" then
@@ -152,19 +161,8 @@ calendar.show = function(timeout)
 					return widget
 				end
 			},
-			{
-				{
-					text = event_summary,
-					widget = wibox.widget.textbox
-				},
-				nil,
-				{
-					text = event_time,
-					widget = wibox.widget.textbox
-				},
-				layout = wibox.layout.align.horizontal
-			},
-			layout = wibox.layout.fixed.vertical
+			spacing = 5,
+			layout = wibox.layout.flex.horizontal
 		},
 		left = 10,
 		right = 10,
@@ -186,7 +184,7 @@ calendar.inc = function(offset)
 end
 
 calendar.attach = function(widget)
-	widget:connect_signal("mouse::enter", function() calendar.show() end)
+	widget:connect_signal("mouse::enter", function() calendar.show(0) end)
 	widget:connect_signal("mouse::leave", function() calendar.hide() end)
 
 	widget:buttons(gears.table.join(
