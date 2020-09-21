@@ -10,8 +10,9 @@ local calendar = {}
 
 calendar.events = {}
 
-calendar.get_events = function()
-	awful.spawn.easy_async("curl " .. prefs.cal_url, function(stdout)
+calendar.get_events = function(cal_url)
+	if not cal_url then cal_url = prefs.cal_url end
+	awful.spawn.easy_async("curl " .. cal_url, function(stdout)
 		local curr_date = os.date("*t")
 
 		local index  = 1
@@ -97,16 +98,16 @@ calendar.show = function(timeout)
 		}
 	end
 
-	local event_widget_list = {layout = wibox.layout.fixed.vertical, spacing = 5}
+	local event_widget_list = {layout = wibox.layout.fixed.vertical, spacing = 9}
 	local curr_date = os.date("*t")
 	for _, event in ipairs(calendar.events) do
 		if event.start_date.wday == curr_date.wday then
 			local color = beautiful.normal_color
 			if (curr_date.hour * 60 + curr_date.min) > (event.end_date.hour * 60 + event.end_date.min) then
 				color = beautiful.muted_color
-			elseif (curr_date.hour * 60 + curr_date.min) <
+			elseif (curr_date.hour * 60 + curr_date.min) <=
 			       (event.end_date.hour * 60 + event.end_date.min) and
-			       (curr_date.hour * 60 + curr_date.min) >
+			       (curr_date.hour * 60 + curr_date.min) >=
 			       (event.start_date.hour * 60 + event.start_date.min) then
 				color = beautiful.accent_color
 			end
@@ -134,6 +135,7 @@ calendar.show = function(timeout)
 			{
 				{
 					markup = markup.font("Fira Sans 13", "Today's Agenda"),
+					align = "center",
 					widget = wibox.widget.textbox
 				},
 				event_widget_list,
