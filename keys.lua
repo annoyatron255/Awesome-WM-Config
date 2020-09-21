@@ -228,6 +228,22 @@ keys.global_keys = gears.table.join(
 		end
 	),
 
+	awful.key({ }, "XF86Tools",
+		function()
+			awful.spawn.easy_async_with_shell("pgrep -f -u $USER 'arecord' > /dev/null",
+				function(stdout, stderr, reason, exit_code)
+					if exit_code ~= 0 then
+						awful.spawn.with_shell("arecord -f cd --buffer-time=50 -"
+						                    .. " | aplay --buffer-time=50 -")
+					else
+						awful.spawn("killall arecord")
+					end
+				end
+			)
+		end,
+		{description = "toggle mic loopback", group = "media"}
+	),
+
 	-- MPD Control
 	awful.key({ modkey }, "]",
 		function()
