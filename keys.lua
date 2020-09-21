@@ -314,8 +314,7 @@ keys.global_keys = gears.table.join(
 		function()
 			for c in awful.client.iterate(function (c) return awful.rules.match(c, {class = "WP-34s"}) end) do
 				if c ~= client.focus then
-					client.focus = c
-					c:raise()
+					c:emit_signal("request::activate", "key.calc", {raise = true})
 					return
 				else
 					c:kill()
@@ -369,8 +368,7 @@ keys.global_keys = gears.table.join(
 				elseif n == 1 then
 					og_c.minimized = true
 					c.minimized = false
-					client.focus = c
-					c:raise()
+					c:emit_signal("request::activate", "key.stack", {raise = true})
 				else
 					c.minimized = true
 				end
@@ -405,8 +403,7 @@ keys.global_keys = gears.table.join(
 				elseif n == 1 then
 					og_c.minimized = true
 					c.minimized = false
-					client.focus = c
-					c:raise()
+					c:emit_signal("request::activate", "key.stack", {raise = true})
 				else
 					c.minimized = true
 				end
@@ -497,8 +494,7 @@ keys.global_keys = gears.table.join(
 						og_c.minimized = true
 						c.minimized = false
 						c:swap(og_c)
-						client.focus = c
-						c:raise()
+						c:emit_signal("request::activate", "key.stack", {raise = true})
 					end
 				end)
 			end)
