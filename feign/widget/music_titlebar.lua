@@ -107,7 +107,7 @@ music_titlebar.create = function(c)
 				{ -- Play/pause
 					align = "center",
 					font = left_icons_font,
-					--markup = markup(beautiful.muted_color, utf8.char(0xf040a) .. " "),
+					markup = markup(beautiful.muted_color, utf8.char(0xf040a) .. " "),
 					id = "play_pause_icon",
 					buttons = gears.table.join(
 						awful.button({ }, 1, function()
