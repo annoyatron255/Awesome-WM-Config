@@ -98,7 +98,7 @@ calendar.show = function(timeout)
 		}
 	end
 
-	local event_widget_list = {layout = wibox.layout.fixed.vertical, spacing = 9}
+	local event_widget_list = {layout = wibox.layout.fixed.vertical, spacing = 10}
 	local curr_date = os.date("*t")
 	for _, event in ipairs(calendar.events) do
 		if event.start_date.wday == curr_date.wday then
@@ -139,7 +139,7 @@ calendar.show = function(timeout)
 					widget = wibox.widget.textbox
 				},
 				event_widget_list,
-				spacing = 9,
+				spacing = 7,
 				layout = wibox.layout.fixed.vertical
 			},
 			{
