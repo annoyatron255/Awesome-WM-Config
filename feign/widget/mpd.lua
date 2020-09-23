@@ -10,6 +10,8 @@ local mpd = {}
 
 mpd.now = {}
 
+local request_notification = false
+
 -- {{{ MPD controls
 mpd.toggle = function()
 	awful.spawn("mpc toggle")
@@ -38,26 +40,7 @@ mpd.repeat_cycle = function()
 end
 
 mpd.repeat_cycle_notify = function()
-	local repeat_mode
-
-	if mpd.now.repeat_mode and mpd.now.single_mode then
-		repeat_mode = "OFF"
-	elseif mpd.now.repeat_mode and not mpd.now.single_mode then
-		repeat_mode = "SINGLE"
-	else
-		repeat_mode = "ALL"
-	end
-
-	local notification_text = "Repeat: " .. repeat_mode
-	if not mpd.notification_repeat then
-		mpd.notification_repeat = naughty.notify({
-			text = notification_text,
-			destroy = function() mpd.notification_repeat = nil end
-		})
-	else
-		naughty.replace_text(mpd.notification_repeat, nil, notification_text)
-	end
-
+	request_notification = true
 	mpd.repeat_cycle()
 end
 
@@ -66,24 +49,7 @@ mpd.random_toggle = function()
 end
 
 mpd.random_toggle_notify = function()
-	local random_mode
-
-	if mpd.now.random_mode then
-		random_mode = "OFF"
-	else
-		random_mode = "ON"
-	end
-
-	local notification_text = "Random: " .. random_mode
-	if not mpd.notification_random then
-		mpd.notification_random = naughty.notify({
-			text = notification_text,
-			destory = function() mpd.notification_random = nil end
-		})
-	else
-		naughty.replace_text(mpd.notification_random, nil, notification_text)
-	end
-
+	request_notification = true
 	mpd.random_toggle()
 end
 -- }}}
@@ -109,88 +75,238 @@ mpd.widget:buttons(gears.table.join(
 	end)
 ))
 
-mpd.widget_update = function()
+mpd.widget:connect_signal("mouse::enter", function()
+	request_notification = true
+	mpd.update()
+end)
+mpd.widget:connect_signal("mouse::leave", function()
+	naughty.destroy(mpd.notification)
+end)
+
+mpd.update_widget = function(mpd_now)
 	local str = ""
-	if mpd.now.state == "play" then
+	if mpd_now.state == "play" then
 		str = "   " .. utf8.char(0xf04c) .. " "
-	elseif mpd.now.state == "pause" then
+	elseif mpd_now.state == "pause" then
 		str = "   " .. utf8.char(0xf04b) .. " "
 	end
 
 	mpd.widget:set_markup(markup.font(beautiful.mpd_font, markup(beautiful.normal_color, str)))
 end
+awesome.connect_signal("feign::mpd_update", function(mpd_now)
+	mpd.update_widget(mpd_now)
+end)
 -- }}}
 
 -- {{{ MPD notification
-mpd.show_notification = function()
-	if not string.match(mpd.now.file, "http.*://") then -- local file instead of http stream
+local notification_widget
+local notification_widget_width
+mpd.update_notification = function(mpd_now)
+	local album_art = ""
+
+	local construct_notification = function()
+		local title_textbox = wibox.widget {
+			markup = markup.font("Fira Sans Bold 18", mpd_now.title),
+			valign = "center",
+			widget = wibox.widget.textbox
+		}
+		local artist_textbox = wibox.widget {
+			text = mpd_now.artist,
+			widget = wibox.widget.textbox
+		}
+		local album_textbox = wibox.widget {
+			text = mpd_now.album,
+			widget = wibox.widget.textbox
+		}
+		if mpd_now.date then
+			album_textbox:set_text(album_textbox:get_text() .. " (" ..mpd_now.date .. ")")
+		end
+
+		-- Repeat/random status widget
+		local status_widget = wibox.widget {
+			{
+				{
+					align = "center",
+					font = "FontAwesome 11.5",
+					text = " " .. utf8.char(0xf021) .. " ",
+					id = "repeat_icon",
+					widget = wibox.widget.textbox
+				},
+				{
+					align = "center",
+					font = "Fira Sans Bold 7",
+					text = "1" .. utf8.char(0x2009),
+					id = "single_icon",
+					widget = wibox.widget.textbox
+				},
+				layout = wibox.layout.stack
+			},
+			{
+				align = "center",
+				font = "FontAwesome 11.5",
+				text = utf8.char(0xf074),
+				id = "random_icon",
+				widget = wibox.widget.textbox
+			},
+			layout = wibox.layout.fixed.horizontal
+		}
+		--Random icon colors
+		local random_icon = status_widget:get_children_by_id("random_icon")[1]
+		if mpd_now.random_mode then
+			random_icon:set_markup(markup(beautiful.accent_color, random_icon.text))
+		else
+			random_icon:set_markup(markup(beautiful.muted_color, random_icon.text))
+		end
+		-- Repeat icon shape and colors
+		local single_icon = status_widget:get_children_by_id("single_icon")[1]
+		local repeat_icon = status_widget:get_children_by_id("repeat_icon")[1]
+		single_icon:set_visible(mpd_now.single_mode)
+
+		if mpd_now.repeat_mode then
+			single_icon:set_markup(markup(beautiful.accent_color, single_icon.text))
+			repeat_icon:set_markup(markup(beautiful.accent_color, repeat_icon.text))
+		else
+			single_icon:set_markup(markup(beautiful.muted_color, single_icon.text))
+			repeat_icon:set_markup(markup(beautiful.muted_color, repeat_icon.text))
+		end
+
+		local extra_margin_width
+		local image_width
+		if album_art ~= "" then
+			image_width = 95
+			extra_margin_width = 15
+		else
+			image_width = 0
+			extra_margin_width = 10
+		end
+		local info_width = math.max(
+			title_textbox:get_preferred_size(),
+			artist_textbox:get_preferred_size(),
+			album_textbox:get_preferred_size() + 100
+		)
+		notification_widget_width = info_width + image_width + extra_margin_width
+
+		notification_widget = wibox.widget {
+			{
+				{
+					{
+						title_textbox,
+						{
+							nil,
+							{
+								max_value = mpd_now.time,
+								value = mpd_now.elapsed,
+								forced_height = 2,
+								background_color = beautiful.transparent,
+								color = beautiful.accent_color,
+								id = "progress_bar",
+								widget = wibox.widget.progressbar
+							},
+							nil,
+							expand = "outside",
+							layout = wibox.layout.align.vertical
+						},
+						{
+							artist_textbox,
+							{
+								album_textbox,
+								nil,
+								status_widget,
+								layout = wibox.layout.align.horizontal
+							},
+							layout = wibox.layout.fixed.vertical
+						},
+						layout = wibox.layout.align.vertical
+					},
+					top = 2,
+					bottom = 2,
+					forced_width = info_width,
+					widget = wibox.container.margin
+				},
+				nil,
+				{
+					nil,
+					{
+						image = album_art,
+						forced_width = image_width,
+						widget = wibox.widget.imagebox
+					},
+					nil,
+					expand = "outside",
+					layout = wibox.layout.align.vertical
+				},
+				layout = wibox.layout.align.horizontal
+			},
+			margins = 5,
+			widget = wibox.container.margin
+		}
+
+		awesome.emit_signal("feign::mpd_update_notification", mpd_now)
+	end
+
+	if not string.match(mpd_now.file, "http.*://") then -- local file instead of http stream
 		local path = string.format("%s/%s", prefs.mpd_music_dir,
-			string.match(mpd.now.file, ".*/"))
+			string.match(mpd_now.file, ".*/"))
 		local cmd = string.format("find '%s' -maxdepth 1 -type f | egrep -i -m1 '%s'",
 			path:gsub("'", "'\\''"), "*\\.(jpg|jpeg|png|gif)$")
 
 		awful.spawn.easy_async_with_shell(cmd, function(stdout)
-			local album_art = stdout:gsub("\n", "")
+			album_art = stdout:gsub("\n", "")
 
-			local title_textbox = wibox.widget {
-				markup = markup.font("Fira Sans Bold 18", mpd.now.title),
-				valign = "center",
-				widget = wibox.widget.textbox
-			}
-			local artist_textbox = wibox.widget {
-				text = mpd.now.artist,
-				widget = wibox.widget.textbox
-			}
-			local album_textbox = wibox.widget {
-				text = mpd.now.album .. " (" .. mpd.now.date .. ")",
-				widget = wibox.widget.textbox
-			}
-			local w = math.max(
-				title_textbox:get_preferred_size(),
-				artist_textbox:get_preferred_size(),
-				album_textbox:get_preferred_size()
-			)
-
-			naughty.destroy(mpd.notification)
-			mpd.notification = naughty.notify({
-				height = 100,
-				width = 130 + w,
-				destroy = function() mpd.notification = nil end
-			})
-			mpd.notification.box:setup {
-				{
-					{
-						{
-							title_textbox,
-							nil,
-							{
-								artist_textbox,
-								album_textbox,
-								layout = wibox.layout.fixed.vertical
-							},
-							layout = wibox.layout.align.vertical
-						},
-						top = 3,
-						bottom = 3,
-						widget = wibox.container.margin
-					},
-					nil,
-					{
-						image = album_art,
-						widget = wibox.widget.imagebox
-					},
-					layout = wibox.layout.align.horizontal
-				},
-				margins = 5,
-				widget = wibox.container.margin
-			}
+			construct_notification()
 		end)
+	else
+		construct_notification()
 	end
 end
+awesome.connect_signal("feign::mpd_update", function(mpd_now)
+	mpd.update_notification(mpd_now)
+end)
+
+local notification_update_timer = gears.timer {
+	timeout = 0.5,
+	callback = function()
+		request_notification = true
+		mpd.update()
+	end
+}
+
+local prev_notification_widget_width
+mpd.show_notification = function()
+	if notification_widget_width ~= prev_notification_widget_width then
+		prev_notification_widget_width = notification_widget_width
+		naughty.destroy(mpd.notification)
+	end
+	if not mpd.notification then
+		notification_update_timer:start()
+		mpd.notification = naughty.notify({
+			height = 100,
+			width = notification_widget_width,
+			destroy = function()
+				mpd.notification = nil
+				notification_update_timer:stop()
+			end
+		})
+	end
+
+	mpd.notification.box:set_widget(notification_widget)
+end
+
+local prev_title
+awesome.connect_signal("feign::mpd_update_notification", function(mpd_now)
+	-- Notification update
+	if request_notification or (prev_title ~= mpd_now.title and mpd_now.state == "play") then
+		prev_title = mpd_now.title
+		mpd.show_notification()
+	elseif mpd_now.state == "pause" then
+		prev_title = nil
+	end
+
+	request_notification = false
+end)
 -- }}}
 
 -- {{{ MPD protocol/updating
-local prev_title
 mpd.update = function()
 	local mpd_cmd = "printf \"" .. prefs.mpd_password .. "status\\ncurrentsong\\nclose\\n\""
 		.. " | socat -T3 unix-connect:" .. prefs.mpd_socket .. " stdio"
@@ -206,8 +322,8 @@ mpd.update = function()
 			state        = nil,
 			file         = nil,
 			name         = nil,
-			artist       = nil,
-			title        = "hi",
+			artist       = "Unknown Artist",
+			title        = nil,
 			album        = nil,
 			genre        = nil,
 			track        = nil,
@@ -227,10 +343,10 @@ mpd.update = function()
 				elseif k == "Genre"          then mpd.now.genre        = gears.string.xml_escape(v)
 				elseif k == "Track"          then mpd.now.track        = gears.string.xml_escape(v)
 				elseif k == "Date"           then mpd.now.date         = gears.string.xml_escape(v)
-				elseif k == "Time"           then mpd.now.time         = v
-				elseif k == "elapsed"        then mpd.now.elapsed      = string.match(v, "%d+")
-				elseif k == "song"           then mpd.now.pls_pos      = v
-				elseif k == "playlistlength" then mpd.now.pls_len      = v
+				elseif k == "Time"           then mpd.now.time         = tonumber(v)
+				elseif k == "elapsed"        then mpd.now.elapsed      = tonumber(string.match(v, "%d+"))
+				elseif k == "song"           then mpd.now.pls_pos      = tonumber(v)
+				elseif k == "playlistlength" then mpd.now.pls_len      = tonumber(v)
 				elseif k == "repeat"         then mpd.now.repeat_mode  = v ~= "0"
 				elseif k == "single"         then mpd.now.single_mode  = v ~= "0"
 				elseif k == "random"         then mpd.now.random_mode  = v ~= "0"
@@ -239,18 +355,23 @@ mpd.update = function()
 			end
 		end
 
-		awesome.emit_signal("feign::mpd_update", mpd.now)
-
-		-- Notification update
-		if prev_title ~= mpd.now.title and mpd.now.state == "play" then
-			prev_title = mpd.now.title
-			mpd.show_notification()
-		elseif mpd.now.state == "pause" then
-			prev_title = nil
+		if not mpd.now.title then
+			if mpd.now.name then
+				mpd.now.title = mpd.now.name
+			else
+				mpd.now.title = mpd.now.file:match("([^/]*)%..+")
+			end
 		end
 
-		-- Widget update
-		mpd.widget_update()
+		if not mpd.now.album then
+			if mpd.now.file:match("http.*://") then
+				mpd.now.album = "Web Stream"
+			else
+				mpd.now.album = mpd.now.file:match("(.*)/")
+			end
+		end
+
+		awesome.emit_signal("feign::mpd_update", mpd.now)
 	end)
 end
 

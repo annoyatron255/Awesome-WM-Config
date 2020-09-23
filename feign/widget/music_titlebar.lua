@@ -19,22 +19,15 @@ music_titlebar.update = function(mpd_now)
 		)
 	end
 
-	local title_text
-	if mpd_now.name then
-		title_text = mpd_now.name
-	elseif not mpd_now.title then
-		title_text = mpd_now.file:match("^.+/(.+)%.")
-	else
-		title_text = mpd_now.title
-	end
-
 	music_titlebar.widget:get_children_by_id("track_line")[1]:set_markup(
-		markup(beautiful.normal_color, title_text)
+		markup(beautiful.normal_color, mpd_now.title)
 	)
+	local subline_text = string.format("%s — %s", mpd_now.artist, mpd_now.album)
+	if mpd_now.date then
+		subline_text = subline_text .. " (" .. mpd_now.date .. ")"
+	end
 	music_titlebar.widget:get_children_by_id("track_subline")[1]:set_markup(
-		markup(beautiful.muted_color,
-			string.format("%s — %s (%s)", mpd_now.artist, mpd_now.album, mpd_now.date)
-		)
+		markup(beautiful.muted_color, subline_text)
 	)
 
 	-- Random icon colors
