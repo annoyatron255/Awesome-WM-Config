@@ -1,6 +1,7 @@
 local awful = require("awful")
 local beautiful = require("beautiful")
 local wibox = require("wibox")
+local gears = require("gears")
 local naughty = require("naughty")
 
 -- Brightness bar notification
@@ -14,7 +15,21 @@ local brightness_bar = wibox.widget {
 	margins          = 1,
 	paddings         = 1,
 	ticks            = false,
-	widget           = wibox.widget.progressbar
+	buttons = gears.table.join(
+		awful.button({ }, 1, function()
+			brightness.inc(1)
+		end),
+		awful.button({ }, 3, function()
+			brightness.inc(-1)
+		end),
+		awful.button({ }, 4, function()
+			brightness.inc(1)
+		end),
+		awful.button({ }, 5, function()
+			brightness.inc(-1)
+		end)
+	),
+	widget = wibox.widget.progressbar
 }
 
 brightness.notify = function()
