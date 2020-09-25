@@ -125,10 +125,17 @@ mpd.update_notification = function(mpd_now)
 		-- Repeat/random status widget
 		local status_widget = wibox.widget {
 			{
+				align = "center",
+				font = "FontAwesome 11.5",
+				text = utf8.char(0xf074) .. " ",
+				id = "random_icon",
+				widget = wibox.widget.textbox
+			},
+			{
 				{
 					align = "center",
 					font = "FontAwesome 11.5",
-					text = " " .. utf8.char(0xf021) .. " ",
+					text = utf8.char(0xf021),
 					id = "repeat_icon",
 					widget = wibox.widget.textbox
 				},
@@ -140,13 +147,6 @@ mpd.update_notification = function(mpd_now)
 					widget = wibox.widget.textbox
 				},
 				layout = wibox.layout.stack
-			},
-			{
-				align = "center",
-				font = "FontAwesome 11.5",
-				text = utf8.char(0xf074),
-				id = "random_icon",
-				widget = wibox.widget.textbox
 			},
 			layout = wibox.layout.fixed.horizontal
 		}

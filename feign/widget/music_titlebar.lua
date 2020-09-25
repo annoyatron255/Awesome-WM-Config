@@ -172,11 +172,22 @@ music_titlebar.create = function(c)
 				layout = wibox.layout.align.vertical
 			},
 			{ -- Right repeat/random icons
+
+				{
+					align = "center",
+					font = "FontAwesome 20",
+					text = utf8.char(0xf074),
+					id = "random_icon",
+					buttons = awful.button({ }, 1, function()
+						feign.widget.mpd.random_toggle()
+					end),
+					widget = wibox.widget.textbox
+				},
 				{
 					{
 						align = "center",
 						font = "FontAwesome 20",
-						text = " " .. utf8.char(0xf021) .. " ",
+						text = "  " .. utf8.char(0xf021) .. "  ",
 						id = "repeat_icon",
 						buttons = awful.button({ }, 1, function()
 							feign.widget.mpd.repeat_cycle()
@@ -191,16 +202,6 @@ music_titlebar.create = function(c)
 						widget = wibox.widget.textbox
 					},
 					layout = wibox.layout.stack
-				},
-				{
-					align = "center",
-					font = "FontAwesome 20",
-					text = " " .. utf8.char(0xf074) .. "  ",
-					id = "random_icon",
-					buttons = awful.button({ }, 1, function()
-						feign.widget.mpd.random_toggle()
-					end),
-					widget = wibox.widget.textbox
 				},
 				layout = wibox.layout.fixed.horizontal
 			},
