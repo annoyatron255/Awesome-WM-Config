@@ -651,8 +651,8 @@ keys.client_keys = gears.table.join(
 		{description = "toggle floating", group = "client"}
 	),
 	awful.key({ modkey }, "s",
-		nil,
 		function(c)
+			awful.keygrabber:stop()
 			c:move_to_screen()
 		end,
 		{description = "move to screen", group = "client"}
