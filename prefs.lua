@@ -18,7 +18,8 @@ prefs.tag_names = {
 	utf8.char(0xf0e0), -- Mail
 	utf8.char(0xf15b), -- Documents
 	utf8.char(0xf1b6), -- Steam
-	"7", "8", "9",
+	utf8.char(0xf03d), -- Zoom
+	"8", "9",
 	"F1", "F2", "F3", "F4", "F5", "F6",
 	"F7", "F8", "F9", "F10", "F11", "F12"
 }

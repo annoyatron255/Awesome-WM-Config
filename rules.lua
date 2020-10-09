@@ -97,6 +97,10 @@ awful.rules.rules = {
 		properties = { tag = prefs.tag_names[5] }
 	},
 	{
+		rule = { class = "zoom" },
+		properties = { tag = prefs.tag_names[7] }
+	},
+	{
 		rule = { class = "Terraria.bin.x86_64" },
 		callback = helpers.no_picom_when_focused
 	},
