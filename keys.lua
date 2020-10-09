@@ -1,6 +1,7 @@
 local awful = require("awful")
 local gears = require("gears")
 local beautiful = require("beautiful")
+local naughty = require("naughty")
 local hotkeys_popup = require("awful.hotkeys_popup").widget
 local helpers = require("feign.helpers")
 local prefs = require("prefs")
@@ -154,7 +155,20 @@ keys.global_keys = gears.table.join(
 		{description = "open a terminal", group = "launcher"}
 	),
 	awful.key({ modkey, "Control"}, "r",
-		awesome.restart,
+		function()
+			local cmd = "find ~/.config/awesome/ -iname '*.lua' -exec luac -o - {} \\;"
+			awful.spawn.easy_async_with_shell(cmd, function(stdout, stderr, reason, exit_code)
+				if stderr == "" then
+					awesome.restart()
+				else
+					naughty.notify({
+						preset = naughty.config.presets.critical,
+						title = "An error was detected, aborting restart!",
+						text = stderr
+					})
+				end
+			end)
+		end,
 		{description = "reload awesome", group = "awesome"}
 	),
 	awful.key({ modkey, "Control"}, "q",
