@@ -33,6 +33,17 @@ helpers.no_picom_when_focused = function(c)
 	end)
 end
 
+helpers.terminal_size_adjust = function(c)
+	awesome.sync()
+	if c.screen.index == 1 then
+		awful.spawn("xdotool key --window "
+		            .. tostring(c.window) .. " Ctrl+0")
+	else
+		awful.spawn("xdotool key --window "
+		            .. tostring(c.window) .. " Ctrl+minus")
+	end
+end
+
 -- {{{ Borders
 helpers.get_border_position = function(c)
 	local s = awful.screen.focused()

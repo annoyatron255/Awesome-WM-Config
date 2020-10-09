@@ -37,7 +37,11 @@ awful.rules.rules = {
 	{
 		rule = { class = "URxvt" },
 		except_any = { instance = { "vis", "ncmpcpp" } },
-		properties = { tag = prefs.tag_names[2] }
+		properties = { tag = prefs.tag_names[2] },
+		callback = function(c)
+			helpers.terminal_size_adjust(c)
+			c:connect_signal("property::screen", helpers.terminal_size_adjust)
+		end
 	},
 	{
 		rule = { class = "URxvt", instance = "ncmpcpp" },
