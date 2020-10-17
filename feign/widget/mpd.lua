@@ -5,6 +5,7 @@ local wibox = require("wibox")
 local beautiful = require("beautiful")
 local prefs = require("prefs")
 local markup = require("feign.markup")
+local feign = require("feign")
 
 local mpd = {}
 
@@ -79,6 +80,12 @@ mpd.widget:buttons(gears.table.join(
 		mpd.next_track()
 	end),
 	awful.button({ }, 4, function()
+		mpd.prev_track()
+	end),
+	awful.button({ }, 9, function()
+		mpd.next_track()
+	end),
+	awful.button({ }, 8, function()
 		mpd.prev_track()
 	end)
 ))
@@ -259,9 +266,21 @@ mpd.update_notification = function(mpd_now)
 					{
 						image = album_art,
 						forced_width = image_width,
-						buttons = awful.button({ }, 1, function()
-							naughty.destroy(mpd.notification)
-						end),
+						buttons = gears.table.join(
+							awful.button({ }, 1, function()
+								naughty.destroy(mpd.notification)
+							end),
+							awful.button({ }, 4, function()
+								naughty.reset_timeout(mpd.notification,
+								                      notification_timout)
+								feign.widget.volume.inc(1)
+							end),
+							awful.button({ }, 5, function()
+								naughty.reset_timeout(mpd.notification,
+								                      notification_timout)
+								feign.widget.volume.inc(-1)
+							end)
+						),
 						widget = wibox.widget.imagebox
 					},
 					nil,
@@ -270,7 +289,10 @@ mpd.update_notification = function(mpd_now)
 				},
 				layout = wibox.layout.align.horizontal
 			},
-			margins = 5,
+			top = 5,
+			bottom = 5,
+			left = 5,
+			right = 0,
 			widget = wibox.container.margin
 		}
 
