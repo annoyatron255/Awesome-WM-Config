@@ -196,7 +196,7 @@ mpd.update_notification = function(mpd_now)
 		local extra_margin_width
 		local image_width
 		if album_art ~= "" then
-			image_width = 95
+			image_width = 90
 			extra_margin_width = 15
 		else
 			image_width = 0
@@ -289,10 +289,7 @@ mpd.update_notification = function(mpd_now)
 				},
 				layout = wibox.layout.align.horizontal
 			},
-			top = 5,
-			bottom = 5,
-			left = 5,
-			right = 0,
+			margins = 5,
 			widget = wibox.container.margin
 		}
 
