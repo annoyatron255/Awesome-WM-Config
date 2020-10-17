@@ -319,7 +319,16 @@ keys.global_keys = gears.table.join(
 	-- Display key
 	awful.key({ }, "XF86Display",
 		function()
-			awful.spawn.raise_or_spawn("lxrandr")
+			for c in awful.client.iterate(function(c) return awful.rules.match(c, {class = "Lxrandr"}) end) do
+				if c ~= client.focus then
+					c:emit_signal("request::activate", "key.display", {raise = true})
+					return
+				else
+					c:kill()
+					return
+				end
+			end
+			awful.spawn("lxrandr")
 		end,
 		{description = "spawn lxrandr", group = "launcher"}
 	),
