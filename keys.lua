@@ -265,9 +265,20 @@ keys.global_keys = gears.table.join(
 		end,
 		{description = "play/pause mpd", group = "media"}
 	),
+	awful.key({ }, "XF86AudioPlay",
+		function()
+			feign.widget.mpd.toggle()
+		end
+	),
+	awful.key({ }, "XF86AudioPause",
+		function()
+			feign.widget.mpd.toggle()
+		end
+	),
 	awful.key({ modkey }, "BackSpace",
 		function()
 			feign.widget.mpd.stop()
+			awful.spawn("playerctl stop")
 		end,
 		{description = "stop mpd", group = "media"}
 	),
@@ -277,11 +288,21 @@ keys.global_keys = gears.table.join(
 		end,
 		{description = "previous track mpd", group = "media"}
 	),
+	awful.key({ }, "XF86AudioPrev",
+		function()
+			feign.widget.mpd.prev_track()
+		end
+	),
 	awful.key({ modkey }, "\\",
 		function()
 			feign.widget.mpd.next_track()
 		end,
 		{description = "next track mpd", group = "media"}
+	),
+	awful.key({ }, "XF86AudioNext",
+		function()
+			feign.widget.mpd.next_track()
+		end
 	),
 	awful.key({ modkey }, "'",
 		function()
