@@ -330,10 +330,19 @@ keys.global_keys = gears.table.join(
 			feign.widget.brightness.inc(5)
 		end
 	),
-
 	awful.key({ }, "XF86MonBrightnessDown",
 		function()
 			feign.widget.brightness.inc(-5)
+		end
+	),
+	awful.key({ "Control" }, "XF86MonBrightnessUp",
+		function()
+			feign.widget.brightness.inc(1)
+		end
+	),
+	awful.key({ "Control" }, "XF86MonBrightnessDown",
+		function()
+			feign.widget.brightness.inc(-1)
 		end
 	),
 
