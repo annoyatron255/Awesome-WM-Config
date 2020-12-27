@@ -203,9 +203,9 @@ mpd.update_notification = function(mpd_now)
 			extra_margin_width = 10
 		end
 		local info_width = math.max(
-			title_textbox:get_preferred_size(),
+			title_textbox:get_preferred_size() + 2,
 			artist_textbox:get_preferred_size(),
-			album_textbox:get_preferred_size() + 100
+			album_textbox:get_preferred_size() + 50
 		)
 		notification_widget_width = info_width + image_width + extra_margin_width
 
