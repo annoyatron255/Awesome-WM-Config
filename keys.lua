@@ -402,68 +402,11 @@ keys.global_keys = gears.table.join(
 	),
 
 	awful.key({ modkey }, "`",
-		function()
-			local og_c = client.focus
-
-			if og_c == nil then
-				return
-			end
-
-			local matcher = function(c)
-				return (c.window == og_c.window or
-					awful.widget.tasklist.filter.minimizedcurrenttags(c, c.screen))
-					and c:tags()[#c:tags()] == og_c:tags()[#og_c:tags()]
-			end
-
-			local n = 0
-			for c in awful.client.iterate(matcher) do
-				if n == 0 then
-				elseif n == 1 then
-					og_c.minimized = true
-					c.minimized = false
-					c:emit_signal("request::activate", "key.stack", {raise = true})
-				else
-					c.minimized = true
-				end
-				c:swap(og_c)
-				n = n + 1
-			end
-		end,
+		helpers.cycle_stack,
 		{description = "cycle stack", group = "tag"}
 	),
 	awful.key({ modkey, "Control" }, "`",
-		function()
-			local og_c = client.focus
-
-			if og_c == nil then
-				return
-			end
-
-			local matcher = function(c)
-				return awful.widget.tasklist.filter.minimizedcurrenttags(c, c.screen)
-					and c:tags()[#c:tags()] == og_c:tags()[#og_c:tags()]
-			end
-
-			local stack = {}
-			for c in awful.client.iterate(matcher) do
-				stack[#stack+1] = c
-			end
-			stack[#stack+1] = og_c
-
-			local n = 0
-			for _, c in ipairs(gears.table.reverse(stack))  do
-				if n == 0 then
-				elseif n == 1 then
-					og_c.minimized = true
-					c.minimized = false
-					c:emit_signal("request::activate", "key.stack", {raise = true})
-				else
-					c.minimized = true
-				end
-				c:swap(og_c)
-				n = n + 1
-			end
-		end,
+		helpers.reverse_cycle_stack,
 		{description = "reverse cycle stack", group = "tag"}
 	),
 	awful.key({ modkey }, "space",
@@ -839,6 +782,12 @@ keys.client_buttons = gears.table.join(
 			c:emit_signal("request::activate", "mouse_click", {raise = true})
 			awful.mouse.client.resize(c)
 		end
+	),
+	awful.button({ modkey }, 4,
+		helpers.reverse_cycle_stack
+	),
+	awful.button({ modkey }, 5,
+		helpers.cycle_stack
 	)
 )
 
