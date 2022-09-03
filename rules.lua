@@ -124,7 +124,7 @@ awful.rules.rules = {
 		properties = { tag = prefs.tag_names[3] }
 	},
 	{
-		rule = { class = "Thunderbird" },
+		rule = { class = "thunderbird" },
 		properties = { tag = prefs.tag_names[4] }
 	},
 	{
