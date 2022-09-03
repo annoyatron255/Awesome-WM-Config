@@ -10,7 +10,7 @@ visualizer.spawn = function(s)
 	if not s then
 		s = awful.screen.focused()
 	end
-	awful.spawn(prefs.terminal .. "\
+	awful.spawn("urxvtc \
 		-font 'xft:Fira Mono:size=10'\
 		-scollBar false\
 		-sl 0\

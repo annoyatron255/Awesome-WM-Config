@@ -15,7 +15,7 @@ calendar.get_events = function(cal_url)
 	awful.spawn.easy_async("curl " .. cal_url, function(stdout)
 		local curr_date = os.date("*t")
 
-		local index  = 1
+		local index = 1
 		for day in string.gmatch(stdout, "RRULE:FREQ=WEEKLY;BYDAY=(%u%u)[^\n]+") do
 			calendar.events[index] = {}
 			calendar.events[index].start_date = {}
@@ -29,23 +29,31 @@ calendar.get_events = function(cal_url)
 			index = index + 1
 		end
 
-		index  = 1
+		index = 1
 		for hour, min in string.gmatch(stdout, "DTSTART;TZID=America/Chicago:[%d]+T(%d%d)(%d%d)[^\n]+") do
 			calendar.events[index].start_date.hour = tonumber(hour)
 			calendar.events[index].start_date.min = tonumber(min)
 			index = index + 1
 		end
 
-		index  = 1
+		index = 1
 		for hour, min in string.gmatch(stdout, "DTEND;TZID=America/Chicago:[%d]+T(%d%d)(%d%d)[^\n]+") do
 			calendar.events[index].end_date.hour = tonumber(hour)
 			calendar.events[index].end_date.min = tonumber(min)
 			index = index + 1
 		end
 
-		index  = 1
+		index = 1
 		for summary in string.gmatch(stdout, "SUMMARY:([^\r\n]+)") do
 			calendar.events[index].summary = summary
+			index = index + 1
+		end
+
+		index = 0
+		for location in string.gmatch(stdout, "LOCATION:([^\r\n]+)") do
+			if index >= 1 then
+				calendar.events[index].location = location
+			end
 			index = index + 1
 		end
 
@@ -64,6 +72,7 @@ end
 calendar.get_events()
 
 calendar.offset = 0
+calendar.day_offset = 0
 
 calendar.get_date_with_offset = function()
 	local date = os.date("*t")
@@ -94,6 +103,7 @@ calendar.show = function(timeout)
 			destroy = function()
 				calendar.notification = nil
 				calendar.offset = 0
+				calendar.day_offset = 0
 			end
 		}
 	end
@@ -101,7 +111,7 @@ calendar.show = function(timeout)
 	local event_widget_list = {layout = wibox.layout.fixed.vertical, spacing = 10}
 	local curr_date = os.date("*t")
 	for _, event in ipairs(calendar.events) do
-		if event.start_date.wday == curr_date.wday then
+		if event.start_date.wday == (curr_date.wday + calendar.day_offset) then
 			local color = beautiful.normal_color
 			if (curr_date.hour * 60 + curr_date.min) > (event.end_date.hour * 60 + event.end_date.min) then
 				color = beautiful.muted_color
@@ -113,6 +123,7 @@ calendar.show = function(timeout)
 			end
 
 			local event_summary = event.summary
+			local event_location = event.location
 			local event_time = event.start_date.hour .. ":" .. string.format("%02d", event.start_date.min)
 			   .. "–" .. event.end_date.hour .. ":" .. string.format("%02d", event.end_date.min)
 			table.insert(event_widget_list, wibox.widget {
@@ -125,6 +136,12 @@ calendar.show = function(timeout)
 					markup = markup(color, markup.font("Fira Sans 11", event_time)),
 					widget = wibox.widget.textbox
 				},
+				buttons = awful.button({ }, 1, function()
+					if string.match(event_location, "http") then
+						awful.spawn("firefox " .. event_location)
+						calendar.hide()
+					end
+				end),
 				layout = wibox.layout.align.horizontal
 			})
 		end
@@ -185,15 +202,33 @@ calendar.inc = function(offset)
 	calendar.show(0)
 end
 
+calendar.inhibit_mouse_leave = false
+
 calendar.attach = function(widget)
-	widget:connect_signal("mouse::enter", function() calendar.show(0) end)
-	widget:connect_signal("mouse::leave", function() calendar.hide() end)
+	widget:connect_signal("mouse::enter", function()
+		calendar.inhibit_mouse_leave = false
+		calendar.show(0)
+	end)
+	widget:connect_signal("mouse::leave", function()
+		if not calendar.inhibit_mouse_leave then
+			calendar.hide()
+		end
+	end)
 
 	widget:buttons(gears.table.join(
 		awful.button({}, 1, function() calendar.inc(-1) end),
+		awful.button({}, 2, function()
+			calendar.inhibit_mouse_leave = not calendar.inhibit_mouse_leave
+		end),
 		awful.button({}, 3, function() calendar.inc(1) end),
-		awful.button({}, 4, function() calendar.inc(-1) end),
-		awful.button({}, 5, function() calendar.inc(1) end)
+		awful.button({}, 4, function()
+			calendar.day_offset = calendar.day_offset - 1
+			calendar.show(0)
+		end),
+		awful.button({}, 5, function()
+			calendar.day_offset = calendar.day_offset + 1
+			calendar.show(0)
+		end)
 	))
 end
 

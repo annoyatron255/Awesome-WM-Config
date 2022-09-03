@@ -100,17 +100,18 @@ volume.notify = function()
 end
 
 volume.inc = function(percent)
-	--[[if percent >= 0 then
+	if percent >= 0 then
 		percent = "+" .. percent
 	end
-	awful.spawn.easy_async("pactl set-sink-volume 0 " .. percent .. "%", volume.notify)
-	--]]
+	awful.spawn.easy_async("pactl set-sink-volume @DEFAULT_SINK@ " .. percent .. "%", volume.notify)
+	--[[
 	if percent >= 0 then
 		percent = percent .. "%+"
 	else
 		percent = -1 * percent .. "%-"
 	end
 	awful.spawn.easy_async("amixer set Master " .. percent, volume.notify)
+	--]]
 end
 
 volume.toggle_mute = function()

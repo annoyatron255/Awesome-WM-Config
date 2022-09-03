@@ -24,7 +24,7 @@ prefs.tag_names = {
 	"F7", "F8", "F9", "F10", "F11", "F12"
 }
 
-prefs.terminal = "urxvtc" -- Other terminals not tested or recommended and will probably not work
+prefs.terminal = "alacritty msg create-window" -- Other terminals not tested or recommended and will probably not work
 prefs.compositor = [[picom --backend glx --force-win-blend --use-damage --glx-fshader-win '
 	uniform float opacity;
 	uniform bool invert_color;

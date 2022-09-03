@@ -35,13 +35,41 @@ awful.rules.rules = {
 		properties = { tag = prefs.tag_names[1] }
 	},
 	{
-		rule = { class = "URxvt" },
-		except_any = { instance = { "vis", "ncmpcpp" } },
+		rule = { class = "Alacritty" },
+		except_any = { instance = { "ncmpcpp" } },
 		properties = { tag = prefs.tag_names[2] },
 		callback = function(c)
 			helpers.terminal_size_adjust(c)
 			c:connect_signal("property::screen", helpers.terminal_size_adjust)
 		end
+	},
+	{
+		rule = { class = "Alacritty", instance = "ncmpcpp" },
+		properties = { tag = prefs.tag_names[3] },
+		callback = function(c)
+			feign.widget.music_titlebar.create(c)
+			helpers.terminal_size_adjust(c)
+			c:connect_signal("property::screen", helpers.terminal_size_adjust)
+		end
+	},
+	{
+		rule = { class = "Alacritty", instance = "hidden" },
+		properties = {
+			hidden = true,
+			focusable = false,
+			below = true,
+			sticky = true,
+			skip_taskbar = true
+		}
+	},
+	{
+		rule = { class = "URxvt" },
+		except_any = { instance = { "vis", "ncmpcpp" } },
+		properties = { tag = prefs.tag_names[2] }--[[,
+		callback = function(c)
+			helpers.terminal_size_adjust(c)
+			c:connect_signal("property::screen", helpers.terminal_size_adjust)
+		end]]
 	},
 	{
 		rule = { class = "URxvt", instance = "ncmpcpp" },
@@ -67,6 +95,21 @@ awful.rules.rules = {
 			skip_taskbar = true,
 			floating = true
 		}
+	},
+	{
+		rule = { class = "Surf", instance = "fluid" },
+		properties = {
+			honor_workarea = false,
+			honor_padding = false,
+			maximized = true,
+			focusable = false,
+			below = true,
+			sticky = true,
+			skip_taskbar = true
+		},
+		callback = function(c)
+			c:geometry(c.screen.geometry)
+		end
 	},
 	{
 		rule = { class = "XTerm" },
@@ -112,5 +155,20 @@ awful.rules.rules = {
 			skip_taskbar = true,
 			ontop = true
 		}
+	},
+	{
+		rule = { class = "XEyes" },
+		properties = {
+			floating = true,
+			ontop = true
+		}
+	},
+	{
+		rule = { class = "Code Composer Studio" },
+		properties = { tag = prefs.tag_names[11] }
+	},
+	{
+		rule = { class = "Slack" },
+		properties = { tag = prefs.tag_names[12] }
 	}
 }

@@ -75,8 +75,9 @@ end
 
 -- {{{ Autostart
 helpers.run_once({
+	{"alacritty --class Alacritty,hidden"},
 	{"urxvtd"},
-	{prefs.compositor};
+	{prefs.compositor},
 	{"easystroke"},
 	{"libinput-gestures"},
 	{"xss-lock /home/jack/.config/awesome/scripts/start_locker.sh"},
@@ -84,9 +85,10 @@ helpers.run_once({
 	{"redshift"},
 	{"unclutter"},
 	{"nm-applet"},
+	{"blueman-applet"},
 	{"firefox"},
-	{"ncmpcpp"},
 	{"thunderbird"},
+	{"ncmpcpp"}
 })
 -- }}}
 
@@ -116,6 +118,42 @@ client.connect_signal("manage", function(c)
 		awful.placement.no_offscreen(c)
 	end
 end)
+
+--[[client.connect_signal("manage", function(c)
+	local parent = awful.client.focus.history.get(c.screen, 1)
+	if not parent then return end
+
+	local term_id = "/tmp/urxvtc_ids/" .. parent.window
+
+	awful.spawn.easy_async("cat " .. term_id, function(parent_window_pid)
+		awful.spawn.easy_async_with_shell("pstree -Tpas " .. c.pid .. " | sed '3q;d' | grep -o '[0-9]*$' | tr -d '\n'", function(parent_process_pid)
+			if parent_process_pid == parent_window_pid and parent.class == "URxvt" then
+				c:connect_signal("unmanage", function(c)
+					parent.minimized = false
+				end)
+
+				parent.minimized = true
+				c.minimized = false
+				--c:emit_signal("request::activate", "test1", {raise = true})
+				c:swap(parent)
+
+				c:connect_signal("swapped", function()
+					local cls = gears.table.reverse(client.get(parent.screen))
+					local past_c = true
+					for _, v in ipairs(cls) do
+						if past_c and v ~= c then
+							parent:swap(v)
+							naughty.notify({text = "test2"})
+						elseif v == c then
+							past_c = false
+							naughty.notify({text = "test"})
+						end
+					end
+				end)
+			end
+		end)
+	end)
+end)--]]
 
 client.connect_signal("request::titlebars", function(c)
 	awful.titlebar(c, {

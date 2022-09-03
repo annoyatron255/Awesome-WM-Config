@@ -144,7 +144,7 @@ keys.global_keys = gears.table.join(
 			if client.focus then
 				local term_id = "/tmp/urxvtc_ids/" .. client.focus.window
 				awful.spawn.with_shell(prefs.terminal ..
-					" -cd \"$([ -f " .. term_id .. " ] && \
+					" --working-directory \"$([ -f " .. term_id .. " ] && \
 					readlink -e /proc/$(cat " .. term_id .. ")/cwd || \
 					echo $HOME)\""
 				)

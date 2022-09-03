@@ -2,8 +2,25 @@ local awful = require("awful")
 local beautiful = require("beautiful")
 local gears = require("gears")
 local prefs = require("prefs")
+local lgi = require("lgi")
+local Gio = lgi.Gio
 
 local helpers = {}
+
+helpers.read_file = function(filename)
+	local function dump_file(filename)
+		if filename == nil then return end
+		local file = Gio.File.new_for_path(filename)
+		local info = file:async_query_info("standard::size", "NONE")
+		
+		local stream = file:async_read()
+		local bytes = stream:async_read_bytes(info:get_size())
+
+		stream:async_close()
+		return bytes.data
+	end
+	return Gio.Async.call(dump_file)(filename)
+end
 
 helpers.instance_exists = function(clients, instance)
 	for _, c in ipairs(clients) do
@@ -37,11 +54,15 @@ end
 helpers.terminal_size_adjust = function(c)
 	awesome.sync()
 	if c.screen.index == 1 then
-		awful.spawn("xdotool key --window "
-		            .. tostring(c.window) .. " Ctrl+0")
+		awful.spawn("alacritty msg config --window-id "
+			.. tostring(c.window) .. " font.size=10.0")
+		--[[awful.spawn("xdotool key --window "
+		            .. tostring(c.window) .. " Ctrl+0")]]
 	else
-		awful.spawn("xdotool key --window "
-		            .. tostring(c.window) .. " Ctrl+minus")
+		awful.spawn("alacritty msg config --window-id "
+			.. tostring(c.window) .. " font.size=8.0")
+		--[[awful.spawn("xdotool key --window "
+		            .. tostring(c.window) .. " Ctrl+minus")]]
 	end
 end
 
@@ -98,14 +119,14 @@ end
 
 -- {{{ Special program run
 -- Convert to string to terminal emulator syntax if in terminal_programs
--- Also sets the instance of program to the command name; may need changing if terminal ~= urxvt(c)
+-- Also sets the instance of program to the command name; may need changing if terminal ~= alacritty
 helpers.terminal_program = function(cmd)
 	local program = cmd:match("^([^ ]+)")
-	return prefs.terminal .. " -name " .. program .. " -e " .. cmd
+	return prefs.terminal .. " --class Alacritty," .. program .. " -e " .. cmd
 end
 
 helpers.popup_program = function(cmd)
-	return prefs.terminal .. " -name popup -geometry 160x20 -e zsh -c \"source $HOME/.zshrc && " .. cmd .. "\""
+	return "urxvtc -name popup -geometry 160x20 -e zsh -c \"source $HOME/.zshrc && " .. cmd .. "\""
 end
 
 helpers.popup_when_no_args = function(cmd)

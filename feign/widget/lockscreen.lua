@@ -173,6 +173,7 @@ local function get_creds()
 					awful.spawn("pkill fprintd-verify")
 					hide_lockscreen()
 				else
+					fingerprint_loop()
 					password_loop()
 				end
 			end
@@ -180,19 +181,22 @@ local function get_creds()
 	end
 	password_loop()
 
-	local function fingerprint_loop()
-		awful.spawn.easy_async("fprintd-verify", function(stdout, stderr, reason, exit_code)
-			if stdout:match("verify%-match") then
-				lockscreen_enabled = false
-				keygrabber:stop()
-				mousegrabber.stop()
-				hide_lockscreen()
-			elseif lockscreen_enabled == true then
-				fingerprint_loop()
+	function fingerprint_loop()
+		--[[awful.spawn.easy_async("fprintd-verify", function(stdout, stderr, reason, exit_code)
+			if exit_code == 0 then
+				if stdout:match("verify%-match") then
+					lockscreen_enabled = false
+					keygrabber:stop()
+					mousegrabber.stop()
+					hide_lockscreen()
+					awful.spawn("killall fprintd-verify")
+				elseif lockscreen_enabled == true then
+					fingerprint_loop()
+				end
 			end
-		end)
+		end)]]
 	end
-	fingerprint_loop()
+	--fingerprint_loop()
 end
 
 lockscreen.lockscreen = function()
