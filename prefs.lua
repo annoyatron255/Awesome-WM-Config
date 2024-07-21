@@ -25,24 +25,10 @@ prefs.tag_names = {
 }
 
 prefs.terminal = "alacritty msg create-window" -- Other terminals not tested or recommended and will probably not work
-prefs.compositor = [[picom --backend glx --force-win-blend --use-damage --glx-fshader-win '
-	uniform float opacity;
-	uniform bool invert_color;
-	uniform sampler2D tex;
-	void main() {
-		vec4 c = texture2D(tex, gl_TexCoord[0].xy);
-		if (!invert_color) { // Hack to allow picom exceptions
-			// Change the vec4 to your desired key color
-			vec4 vdiff = abs(vec4(0.0, 0.0039, 0.0, 1.0) - c); // #000100
-			float diff = max(max(max(vdiff.r, vdiff.g), vdiff.b), vdiff.a);
-			// Change the vec4 to your desired output color
-			if (diff < 0.001)
-				c = vec4(0.0, 0.0, 0.0, 0.890196); // #000000E3
-		}
-		c *= opacity;
-		gl_FragColor = c;
-	}'
-]]
+prefs.compositor = "picom --backend glx --force-win-blend --use-damage --window-shader-fg-rule "
+	.. os.getenv("HOME") .. "/Code/picom-shaders/fake-transparency-fshader.glsl:'class_g = \"firefox\"' "
+	.. "--window-shader-fg-rule "
+	.. os.getenv("HOME") .. "/Code/picom-shaders/fake-full-transparency-fshader.glsl:'class_g = \"cava\"'"
 prefs.editor = os.getenv("EDITOR") or "vim"
 prefs.theme = "little_parade"
 

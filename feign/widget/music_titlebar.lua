@@ -53,7 +53,9 @@ music_titlebar.update = function(mpd_now)
 end
 
 awesome.connect_signal("feign::mpd_update", function(mpd_now)
-	music_titlebar.update(mpd_now)
+	if music_titlebar.widget then
+		music_titlebar.update(mpd_now)
+	end
 end)
 
 music_titlebar.create = function(c)

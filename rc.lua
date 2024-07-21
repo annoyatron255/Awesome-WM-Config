@@ -75,13 +75,13 @@ end
 
 -- {{{ Autostart
 helpers.run_once({
-	{"alacritty --class Alacritty,hidden"},
+	{"systemctl --user start awesome-session.service"},
+	{"alacritty --class Alacritty,Alacritty"},
 	{"urxvtd"},
 	{prefs.compositor},
 	{"easystroke"},
 	{"libinput-gestures"},
 	{"xss-lock /home/jack/.config/awesome/scripts/start_locker.sh"},
-	{"xmodmap ~/.Xmodmap"},
 	{"redshift"},
 	{"unclutter"},
 	{"nm-applet"},

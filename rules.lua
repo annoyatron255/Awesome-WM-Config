@@ -65,11 +65,11 @@ awful.rules.rules = {
 	{
 		rule = { class = "URxvt" },
 		except_any = { instance = { "vis", "ncmpcpp" } },
-		properties = { tag = prefs.tag_names[2] }--[[,
+		properties = { tag = prefs.tag_names[2] },
 		callback = function(c)
 			helpers.terminal_size_adjust(c)
 			c:connect_signal("property::screen", helpers.terminal_size_adjust)
-		end]]
+		end
 	},
 	{
 		rule = { class = "URxvt", instance = "ncmpcpp" },
@@ -109,6 +109,22 @@ awful.rules.rules = {
 		},
 		callback = function(c)
 			c:geometry(c.screen.geometry)
+		end
+	},
+	{
+		rule = { class = "cava" },
+		properties = {
+			floating = true,
+			focusable = false,
+			below = true,
+			sticky = true,
+			skip_taskbar = true
+		},
+		callback = function(c)
+			local geo = c.screen.workarea
+			geo.height = geo.height * 0.45
+			geo.width = geo.width * 0.75
+			c:geometry(geo)
 		end
 	},
 	{
@@ -170,5 +186,9 @@ awful.rules.rules = {
 	{
 		rule = { class = "Slack" },
 		properties = { tag = prefs.tag_names[12] }
-	}
+	},
+	{
+		rule = { class = "Vivado" },
+		properties = { tag = prefs.tag_names[11] }
+	},
 }

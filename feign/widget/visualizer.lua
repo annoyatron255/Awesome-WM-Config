@@ -10,7 +10,7 @@ visualizer.spawn = function(s)
 	if not s then
 		s = awful.screen.focused()
 	end
-	awful.spawn("urxvtc \
+	--[[awful.spawn("urxvtc \
 		-font 'xft:Fira Mono:size=10'\
 		-scollBar false\
 		-sl 0\
@@ -22,7 +22,8 @@ visualizer.spawn = function(s)
 		-name vis\
 		-e sh -c 'export XDG_CONFIG_HOME=" .. beautiful.dir .. " && \
 		vis -c " .. beautiful.dir .. "/vis/config" .. s.index .. "'"
-	)
+	)]]
+	awful.spawn("systemd-run --user --pty cava")
 end
 
 visualizer.kill = function(s)
@@ -30,7 +31,8 @@ visualizer.kill = function(s)
 		s = awful.screen.focused()
 	end
 
-	local c = helpers.instance_exists(s.all_clients, "vis")
+	--local c = helpers.instance_exists(s.all_clients, "vis")
+	local c = helpers.instance_exists(s.all_clients, "cava")
 	if c then
 		c:kill()
 	end
@@ -41,7 +43,8 @@ visualizer.toggle = function(s)
 		s = awful.screen.focused()
 	end
 
-	local c = helpers.instance_exists(s.all_clients, "vis")
+	--local c = helpers.instance_exists(s.all_clients, "vis")
+	local c = helpers.instance_exists(s.all_clients, "cava")
 	if c then
 		c:kill()
 	else

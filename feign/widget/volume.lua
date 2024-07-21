@@ -40,12 +40,15 @@ local status_textbox = wibox.widget {
 local prev_vol
 local prev_playback
 volume.notify = function()
-	awful.spawn.easy_async_with_shell("{amixer get Master && amixer get Capture ; }", function(stdout)
+	awful.spawn.easy_async_with_shell("{amixer get Master && amixer get Capture && wpctl get-volume @DEFAULT_AUDIO_SINK@ ; }", function(stdout)
 		local vol, playback = string.match(stdout, "Playback [%d]+ %[([%d]+)%%%] %[([%l]*)")
 		local mic_vol, mic_playback = string.match(stdout, "Capture [%d]+ %[([%d]+)%%%] %[([%l]*)")
 
+		-- Override vol with pipewire volume unless pipewire-alsa behaves again
+		vol = string.match(stdout, "Volume: ([%d]+.[%d]+)")
+
 		if not vol or not playback or not mic_vol or not mic_playback then return end
-		vol = tonumber(vol)
+		vol = math.floor(tonumber(vol) * 100) -- for pipewire volume
 		mic_vol = tonumber(mic_vol)
 
 		if vol ~= prev_volume or playback ~= prev_playback or mic_vol ~= prev_mic_vol or mic_playback ~= prev_mic_playback then
