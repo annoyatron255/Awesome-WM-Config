@@ -2,6 +2,10 @@ local awful = require("awful")
 
 local prefs = {}
 
+prefs.dpi = function(pixels)
+	return math.floor(150/120 * pixels)
+end
+
 awful.layout.layouts = {
 	awful.layout.suit.tile,
 	awful.layout.suit.tile.left,
@@ -25,10 +29,11 @@ prefs.tag_names = {
 }
 
 prefs.terminal = "alacritty msg create-window" -- Other terminals not tested or recommended and will probably not work
-prefs.compositor = "picom --backend glx --force-win-blend --use-damage --window-shader-fg-rule "
-	.. os.getenv("HOME") .. "/Code/picom-shaders/fake-transparency-fshader.glsl:'class_g = \"firefox\"' "
+prefs.compositor = "picom --backend glx --force-win-blend --use-damage "
 	.. "--window-shader-fg-rule "
-	.. os.getenv("HOME") .. "/Code/picom-shaders/fake-full-transparency-fshader.glsl:'class_g = \"cava\"'"
+	.. os.getenv("HOME") .. "/.config/picom/shaders/fake-transparency-fshader.glsl:'class_g = \"firefox\"' "
+	.. "--window-shader-fg-rule "
+	.. os.getenv("HOME") .. "/.config/picom/shaders/fake-full-transparency-fshader.glsl:'class_g = \"cava\"'"
 prefs.editor = os.getenv("EDITOR") or "vim"
 prefs.theme = "little_parade"
 

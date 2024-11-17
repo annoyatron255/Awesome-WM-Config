@@ -3,6 +3,7 @@ local beautiful = require("beautiful")
 local wibox = require("wibox")
 local gears = require("gears")
 local naughty = require("naughty")
+local prefs = require("prefs")
 
 -- Brightness bar notification
 local brightness = {}
@@ -10,8 +11,8 @@ local brightness = {}
 local brightness_bar = wibox.widget {
 	color            = beautiful.normal_color,
 	background_color = beautiful.transparent,
-	forced_width     = 200,
-	forced_height    = 25,
+	forced_width     = prefs.dpi(200),
+	forced_height    = prefs.dpi(25),
 	margins          = 1,
 	paddings         = 1,
 	ticks            = false,
@@ -34,7 +35,7 @@ local brightness_bar = wibox.widget {
 
 brightness.notify = function()
 	local brightness_now
-	awful.spawn.easy_async_with_shell("xbacklight", function(cmd_out)
+	awful.spawn.easy_async_with_shell("xbacklight -get", function(cmd_out)
 		local val = math.floor(tonumber(cmd_out))
 
 		if not val then return end
@@ -49,8 +50,8 @@ brightness.notify = function()
 				brightness_notification = naughty.notify({
 					text = text,
 					font = beautiful.mono_font,
-					width = 200,
-					height = 40,
+					width = prefs.dpi(200),
+					height = prefs.dpi(40),
 					destroy = function() brightness_notification = nil end
 				})
 				brightness_notification.box:setup {

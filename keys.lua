@@ -21,7 +21,7 @@ keys.global_keys = gears.table.join(
 				s_geo.width .. "x" .. s_geo.height ..
 				"+" .. s_geo.x .. "+" .. s_geo.y ..
 				" " .. os.getenv("HOME") .. "/Pictures/ScreenShots/" ..
-				os.date("%Y-%m-%d@%H:%M:%S") .. ".png")
+				os.date("%Y-%m-%dT%H:%M:%S") .. ".png")
 		end,
 		{description = "screenshot current screen", group = "awesome"}
 	),
@@ -30,7 +30,7 @@ keys.global_keys = gears.table.join(
 			local s_geo = mouse.screen.geometry
 			awful.spawn("import " .. os.getenv("HOME") ..
 				"/Pictures/ScreenShots/" ..
-				os.date("%Y-%m-%d@%H:%M:%S") .. ".png")
+				os.date("%Y-%m-%dT%H:%M:%S") .. ".png")
 		end,
 		{description = "screenshot selection", group = "awesome"}
 	),
@@ -48,7 +48,7 @@ keys.global_keys = gears.table.join(
 					s.geometry.x .. "," .. s.geometry.y ..
 					" -f pulse -ac 2 -i default -c:v libx264 -crf 18 -preset ultrafast " ..
 					os.getenv("HOME") .. "/Videos/ScreenRecord/" ..
-					os.date("%Y-%m-%d@%H:%M:%S") .. ".mp4")
+					os.date("%Y-%m-%dT%H:%M:%S") .. ".mp4")
 				beautiful.myrecordbox.markup = feign.markup.font(
 					beautiful.mpd_font, " " .. utf8.char(0xf03d))
 			end
@@ -137,12 +137,12 @@ keys.global_keys = gears.table.join(
 				Open in working directory of focused terminal,
 				to work put this in your .bashrc/.zshrc/etc.:
 				if [ -n "$WINDOWID" ]; then
-					mkdir -p /tmp/urxvtc_ids/
-					echo $$ > /tmp/urxvtc_ids/$WINDOWID
+					mkdir -p /tmp/terminal_ids/
+					echo $$ > /tmp/terminal_ids/$WINDOWID
 				fi
 			--]]
 			if client.focus then
-				local term_id = "/tmp/urxvtc_ids/" .. client.focus.window
+				local term_id = "/tmp/terminal_ids/" .. client.focus.window
 				awful.spawn.with_shell(prefs.terminal ..
 					" --working-directory \"$([ -f " .. term_id .. " ] && \
 					readlink -e /proc/$(cat " .. term_id .. ")/cwd || \
@@ -678,7 +678,7 @@ local tag_keys = {
 	{"F3",  "XF86AudioRaiseVolume"},  {"F4",  "XF86AudioMicMute"},
 	{"F5",  "XF86MonBrightnessDown"}, {"F6",  "XF86MonBrightnessUp"},
 	{"F7",  "XF86Display"},           {"F8",  "XF86WLAN"},
-	{"F9",  "XF86Tools"},             {"F10", "XF86Bluetooth"},
+	{"F9",  "XF86Tools", "Print"},    {"F10", "XF86Bluetooth", "XF86Launch2"},
 	{"F11", "XF86Launch1"},           {"F12", "XF86Favorites"}
 }
 

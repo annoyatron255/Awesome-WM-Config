@@ -10,8 +10,10 @@ local calendar = {}
 
 calendar.events = {}
 
-calendar.get_events = function(cal_url)
-	if not cal_url then cal_url = prefs.cal_url end
+calendar.get_events = function()
+	if not prefs.cal_url then return end
+	cal_url = prefs.cal_url
+
 	awful.spawn.easy_async("curl " .. cal_url, function(stdout)
 		local curr_date = os.date("*t")
 
@@ -97,8 +99,8 @@ calendar.show = function(timeout)
 
 	if not calendar.notification then
 		calendar.notification = naughty.notify {
-			width = 600,
-			height = 270,
+			width = prefs.dpi(600),
+			height = prefs.dpi(270),
 			timeout = timeout,
 			destroy = function()
 				calendar.notification = nil
@@ -156,7 +158,7 @@ calendar.show = function(timeout)
 					widget = wibox.widget.textbox
 				},
 				event_widget_list,
-				spacing = 7,
+				spacing = prefs.dpi(7),
 				layout = wibox.layout.fixed.vertical
 			},
 			{
@@ -180,13 +182,13 @@ calendar.show = function(timeout)
 					return widget
 				end
 			},
-			spacing = 5,
+			spacing = prefs.dpi(5),
 			layout = wibox.layout.flex.horizontal
 		},
-		left = 10,
-		right = 10,
-		top = 10,
-		bottom = 3,
+		left = prefs.dpi(10),
+		right = prefs.dpi(10),
+		top = prefs.dpi(10),
+		bottom = prefs.dpi(3),
 		widget = wibox.container.margin
 	}
 end

@@ -52,9 +52,11 @@ do
 		if in_error then return end
 		in_error = true
 
-		naughty.notify({ preset = naughty.config.presets.critical,
-		                 title = "Errors occured during runtime!",
-		        	 text = tostring(err) })
+		if not string.find(tostring(err), "C stack overflow") then
+			naughty.notify({ preset = naughty.config.presets.critical,
+					 title = "Errors occured during runtime!",
+					 text = tostring(err) })
+		end
 		in_error = false
 	end)
 end
@@ -123,7 +125,7 @@ end)
 	local parent = awful.client.focus.history.get(c.screen, 1)
 	if not parent then return end
 
-	local term_id = "/tmp/urxvtc_ids/" .. parent.window
+	local term_id = "/tmp/terminal_ids/" .. parent.window
 
 	awful.spawn.easy_async("cat " .. term_id, function(parent_window_pid)
 		awful.spawn.easy_async_with_shell("pstree -Tpas " .. c.pid .. " | sed '3q;d' | grep -o '[0-9]*$' | tr -d '\n'", function(parent_process_pid)

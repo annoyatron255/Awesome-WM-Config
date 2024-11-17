@@ -60,7 +60,7 @@ helpers.terminal_size_adjust = function(c)
 		            .. tostring(c.window) .. " Ctrl+0")]]
 	else
 		awful.spawn("alacritty msg config --window-id "
-			.. tostring(c.window) .. " font.size=8.0")
+			.. tostring(c.window) .. " font.size=11.0")
 		--[[awful.spawn("xdotool key --window "
 		            .. tostring(c.window) .. " Ctrl+minus")]]
 	end

@@ -4,14 +4,15 @@ local wibox = require("wibox")
 local gears = require("gears")
 local naughty = require("naughty")
 local markup = require("feign.markup")
+local prefs = require("prefs")
 
 local volume = {}
 
 local volume_bar = wibox.widget {
 	color            = beautiful.normal_color,
 	background_color = beautiful.transparent,
-	forced_width     = 200,
-	forced_height    = 25,
+	forced_width     = prefs.dpi(200),
+	forced_height    = prefs.dpi(25),
 	margins          = 1,
 	paddings         = 1,
 	ticks            = false,
@@ -39,8 +40,10 @@ local status_textbox = wibox.widget {
 
 local prev_vol
 local prev_playback
+local prev_mic_vol
+local prev_mic_playback
 volume.notify = function()
-	awful.spawn.easy_async_with_shell("{amixer get Master && amixer get Capture && wpctl get-volume @DEFAULT_AUDIO_SINK@ ; }", function(stdout)
+	awful.spawn.easy_async_with_shell("amixer get Master && amixer get Capture && wpctl get-volume @DEFAULT_AUDIO_SINK@", function(stdout)
 		local vol, playback = string.match(stdout, "Playback [%d]+ %[([%d]+)%%%] %[([%l]*)")
 		local mic_vol, mic_playback = string.match(stdout, "Capture [%d]+ %[([%d]+)%%%] %[([%l]*)")
 
@@ -78,8 +81,8 @@ volume.notify = function()
 				volume.notification = naughty.notify({
 					text = text,
 					font = beautiful.mono_font,
-					height = 40,
-					width = 200,
+					height = prefs.dpi(40),
+					width = prefs.dpi(200),
 					destroy = function() volume.notification = nil end
 				})
 				volume.notification.box:setup {

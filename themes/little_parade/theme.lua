@@ -17,15 +17,16 @@ local theme					= {}
 theme.dir					= os.getenv("HOME") .. "/.config/awesome/themes/little_parade"
 -- Settings
 theme.border_width				= 0
-theme.menu_height				= 16
-theme.menu_width				= 130
+theme.menu_height				= prefs.dpi(16)
+theme.menu_width				= prefs.dpi(130)
 theme.useless_gap 				= 0
 theme.taglist_spacing				= 0
 theme.tasklist_disable_icon			= true
 theme.titlebar_size				= 1
-theme.floating_titlebar_size			= 5
+theme.floating_titlebar_size			= prefs.dpi(5)
 
 theme.wallpaper					= theme.dir .. "/wall.png"
+theme.wallpaper_16x10				= theme.dir .. "/wall_16x10.png"
 -- Fonts
 theme.font					= "Fira Sans Medium 10.5"
 theme.taglist_font				= "FontAwesome 10.5" -- FontAwesome v4.7
@@ -105,7 +106,7 @@ awful.widget.taglist.filter.all = function(t, args)
 end
 
 local mysystray = wibox.widget.systray()
-mysystray:set_base_size(16)
+mysystray:set_base_size(prefs.dpi(16))
 --mysystray:set_visible(false)
 
 -- Hide mylayoutbox 
@@ -174,28 +175,33 @@ function theme.at_screen_connect(s)
 	s.mywibox = awful.wibar({
 		position = "top",
 		screen = s,
-		height = 18,
+		height = prefs.dpi(18),
 		bg = theme.base_color,
 		fg = theme.normal_color
 	})
 
 	s.mywibox:setup {
-		layout = wibox.layout.align.horizontal,
-		{ -- Left widgets
-			layout = wibox.layout.fixed.horizontal,
-			s.mylayoutbox,
-			s.mytaglist,
-			theme.mymodebox,
-			s.mypromptbox
-		},
-		s.mytasklist, -- Middle widget
-		{ -- Right widgets
-			layout = wibox.layout.fixed.horizontal,
-			mysystray,
-			feign.widget.mpd.widget,
-			theme.myrecordbox,
-			feign.widget.battery.widget,
-			mytextclock
+		layout = wibox.container.margin,
+		left = 5,
+		right = 5,
+		{
+			layout = wibox.layout.align.horizontal,
+			{ -- Left widgets
+				layout = wibox.layout.fixed.horizontal,
+				s.mylayoutbox,
+				s.mytaglist,
+				theme.mymodebox,
+				s.mypromptbox
+			},
+			s.mytasklist, -- Middle widget
+			{ -- Right widgets
+				layout = wibox.layout.fixed.horizontal,
+				mysystray,
+				feign.widget.mpd.widget,
+				theme.myrecordbox,
+				feign.widget.battery.widget,
+				mytextclock
+			}
 		}
 	}
 end

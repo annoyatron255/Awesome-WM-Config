@@ -1,10 +1,12 @@
 local awful = require("awful")
 local wibox = require("wibox")
 local naughty = require("naughty")
+local gears = require("gears")
 local glib = require("lgi").GLib
 local pam = require("liblua_pam")
 local beautiful = require("beautiful")
 local feign = require("feign")
+local prefs = require("prefs")
 
 local lockscreen = {}
 
@@ -17,10 +19,15 @@ local function setup_lockscreen(s)
 	awful.placement.maximize(lockscreen_box)
 	lockscreen_box.bg = "#000000"
 
+	local wallpaper = beautiful.wallpaper
+	if math.abs(s.geometry.width/s.geometry.height - 16/10) < 0.01 then
+		wallpaper = beautiful.wallpaper_16x10
+	end
+
 	s.lockscreen_box = lockscreen_box
 	s.lockscreen_box:setup {
 		{
-			image = beautiful.wallpaper,
+			image = wallpaper,
 			resize = true,
 			widget = wibox.widget.imagebox
 		},
@@ -57,7 +64,12 @@ local function setup_lockscreen(s)
 		},
 		layout = wibox.layout.stack
 	}
-	s.lockscreen_box:get_children_by_id("clock")[1]:set_ratio(2, 0.425)
+
+	if math.abs(s.geometry.width/s.geometry.height - 16/10) < 0.01 then
+		s.lockscreen_box:get_children_by_id("clock")[1]:set_ratio(2, 0.325)
+	else
+		s.lockscreen_box:get_children_by_id("clock")[1]:set_ratio(2, 0.425)
+	end
 end
 
 awful.screen.connect_for_each_screen(setup_lockscreen)
@@ -82,7 +94,7 @@ end
 
 local function update_border(seq_len)
 	local stage = (seq_len % 5)
-	local thickness = 5
+	local thickness = prefs.dpi(5)
 
 	for s in screen do
 		local margin = s.lockscreen_box:get_children_by_id("margin_border")[1]
@@ -183,7 +195,7 @@ local function get_creds()
 
 	function fingerprint_loop()
 		--[[awful.spawn.easy_async("fprintd-verify", function(stdout, stderr, reason, exit_code)
-			if exit_code == 0 then
+			if exit_code == 0 or exit_code == 1 then
 				if stdout:match("verify%-match") then
 					lockscreen_enabled = false
 					keygrabber:stop()
@@ -196,7 +208,7 @@ local function get_creds()
 			end
 		end)]]
 	end
-	--fingerprint_loop()
+	fingerprint_loop()
 end
 
 lockscreen.lockscreen = function()

@@ -5,6 +5,7 @@ local markup = require("feign.markup")
 local gears = require("gears")
 local markup = require("feign.markup")
 local feign = require("feign")
+local prefs = require("prefs")
 
 local music_titlebar = {}
 
@@ -212,7 +213,7 @@ music_titlebar.create = function(c)
 	end
 
 	awful.titlebar(c, {
-		size = 55,
+		size = prefs.dpi(55),
 		position = "top",
 		bg = beautiful.base_color
 	}):setup {

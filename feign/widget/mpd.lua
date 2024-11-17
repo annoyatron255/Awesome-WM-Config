@@ -196,16 +196,16 @@ mpd.update_notification = function(mpd_now)
 		local extra_margin_width
 		local image_width
 		if album_art ~= "" then
-			image_width = 90
-			extra_margin_width = 15
+			image_width = prefs.dpi(90)
+			extra_margin_width = prefs.dpi(15)
 		else
 			image_width = 0
-			extra_margin_width = 10
+			extra_margin_width = prefs.dpi(10)
 		end
 		local info_width = math.max(
-			title_textbox:get_preferred_size() + 2,
+			title_textbox:get_preferred_size() + prefs.dpi(2),
 			artist_textbox:get_preferred_size(),
-			album_textbox:get_preferred_size() + 50
+			album_textbox:get_preferred_size() + prefs.dpi(50)
 		)
 		notification_widget_width = info_width + image_width + extra_margin_width
 
@@ -344,7 +344,7 @@ mpd.show_notification = function()
 	if not mpd.notification then
 		notification_update_timer:start()
 		mpd.notification = naughty.notify({
-			height = 100,
+			height = prefs.dpi(100),
 			width = notification_widget_width,
 			timout = notification_timout,
 			destroy = function()
